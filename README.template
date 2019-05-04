@@ -7,7 +7,7 @@
 ```
 query, err := sqlparser.Parse(`{{.SQL}}`)
 
-query.Query struct {
+query.Query {
 	Type: {{index $types .Expected.Type}}
 	TableName: {{.Expected.TableName}}
 	Conditions: [{{range .Expected.Conditions}}

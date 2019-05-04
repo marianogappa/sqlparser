@@ -5,7 +5,7 @@
 ```
 query, err := sqlparser.Parse(`SELECT a FROM 'b'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: []
@@ -20,7 +20,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`select a fRoM 'b'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: []
@@ -35,7 +35,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: []
@@ -50,7 +50,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a = ''`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -72,7 +72,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a < '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -94,7 +94,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a <= '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -116,7 +116,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a > '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -138,7 +138,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a >= '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -160,7 +160,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -182,7 +182,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'`)
 
-query.Query struct {
+query.Query {
 	Type: Select
 	TableName: b
 	Conditions: [
@@ -211,7 +211,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a = '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Update
 	TableName: a
 	Conditions: [
@@ -233,7 +233,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Update
 	TableName: a
 	Conditions: [
@@ -244,7 +244,7 @@ query.Query struct {
             Operand2: 1,
             Operand2IsField: false,
         }]
-	Updates: map[b:hello c:bye]
+	Updates: map[c:bye b:hello]
 	Inserts: []
 	Fields: []
 }
@@ -255,7 +255,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1' AND b = '789'`)
 
-query.Query struct {
+query.Query {
 	Type: Update
 	TableName: a
 	Conditions: [
@@ -284,7 +284,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b = '1'`)
 
-query.Query struct {
+query.Query {
 	Type: Delete
 	TableName: a
 	Conditions: [
@@ -306,7 +306,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES ('1')`)
 
-query.Query struct {
+query.Query {
 	Type: Insert
 	TableName: a
 	Conditions: []
@@ -321,7 +321,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )`)
 
-query.Query struct {
+query.Query {
 	Type: Insert
 	TableName: a
 	Conditions: []
@@ -336,7 +336,7 @@ query.Query struct {
 ```
 query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' ),('4','5' ,'6' )`)
 
-query.Query struct {
+query.Query {
 	Type: Insert
 	TableName: a
 	Conditions: []
