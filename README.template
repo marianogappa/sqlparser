@@ -1,0 +1,36 @@
+{{- $types := .Types -}}
+{{- $operators := .Operators -}}
+# sqlparser - meant for querying csv files
+{{range .NoErrorExamples}}
+### Example: {{.Name}}
+
+`query, err := sqlparser.Parse(``{{.SQL}}``)`
+
+```
+query.Query struct {
+	Type: {{index $types .Expected.Type}}
+	TableName: {{.Expected.TableName}}
+	Conditions: [{{range .Expected.Conditions}}
+        {
+            Operand1: {{.Operand1}},
+            Operand1IsField: {{.Operand1IsField}},
+            Operator: {{index $operators .Operator}},
+            Operand2: {{.Operand2}},
+            Operand2IsField: {{.Operand2IsField}},
+        }{{end -}}]
+	Updates: {{.Expected.Updates}}
+	Inserts: {{.Expected.Inserts}}
+	Fields: {{.Expected.Fields}}
+}
+```
+{{end}}
+
+{{range .ErrorExamples}}
+### Example: {{.Name}}
+
+`query, err := sqlparser.Parse(``{{.SQL}}``)`
+
+```
+{{.Err}}
+```
+{{end}}

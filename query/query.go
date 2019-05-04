@@ -26,6 +26,15 @@ const (
 	Delete
 )
 
+// TypeString is a string slice with the names of all types in order
+var TypeString = []string{
+	"UnknownType",
+	"Select",
+	"Update",
+	"Insert",
+	"Delete",
+}
+
 // Operator is between operands in a condition
 type Operator int
 
@@ -45,6 +54,17 @@ const (
 	// Lte -> "<="
 	Lte
 )
+
+// OperatorString is a string slice with the names of all operators in order
+var OperatorString = []string{
+	"UnknownOperator",
+	"Eq",
+	"Ne",
+	"Gt",
+	"Lt",
+	"Gte",
+	"Lte",
+}
 
 // Condition is a single boolean condition in a WHERE clause
 type Condition struct {
