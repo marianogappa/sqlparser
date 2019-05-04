@@ -4,9 +4,8 @@
 {{range .NoErrorExamples}}
 ### Example: {{.Name}}
 
-`query, err := sqlparser.Parse(``{{.SQL}}``)`
+```query, err := sqlparser.Parse(`{{.SQL}}`)
 
-```
 query.Query struct {
 	Type: {{index $types .Expected.Type}}
 	TableName: {{.Expected.TableName}}
@@ -28,9 +27,8 @@ query.Query struct {
 {{range .ErrorExamples}}
 ### Example: {{.Name}}
 
-`query, err := sqlparser.Parse(``{{.SQL}}``)`
+```query, err := sqlparser.Parse(`{{.SQL}}`)
 
-```
 {{.Err}}
 ```
 {{end}}
