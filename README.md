@@ -2,7 +2,8 @@
 
 ### Example: SELECT works
 
-```query, err := sqlparser.Parse(`SELECT a FROM 'b'`)
+```
+query, err := sqlparser.Parse(`SELECT a FROM 'b'`)
 
 query.Query struct {
 	Type: Select
@@ -16,7 +17,8 @@ query.Query struct {
 
 ### Example: SELECT works with lowercase
 
-```query, err := sqlparser.Parse(`select a fRoM 'b'`)
+```
+query, err := sqlparser.Parse(`select a fRoM 'b'`)
 
 query.Query struct {
 	Type: Select
@@ -30,7 +32,8 @@ query.Query struct {
 
 ### Example: SELECT many fields works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b'`)
 
 query.Query struct {
 	Type: Select
@@ -44,7 +47,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with = works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a = ''`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a = ''`)
 
 query.Query struct {
 	Type: Select
@@ -65,7 +69,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with < works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a < '1'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a < '1'`)
 
 query.Query struct {
 	Type: Select
@@ -86,7 +91,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with <= works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a <= '1'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a <= '1'`)
 
 query.Query struct {
 	Type: Select
@@ -107,7 +113,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with > works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a > '1'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a > '1'`)
 
 query.Query struct {
 	Type: Select
@@ -128,7 +135,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with >= works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a >= '1'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a >= '1'`)
 
 query.Query struct {
 	Type: Select
@@ -149,7 +157,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with != works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1'`)
 
 query.Query struct {
 	Type: Select
@@ -170,7 +179,8 @@ query.Query struct {
 
 ### Example: SELECT with WHERE with two conditions using AND works
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'`)
 
 query.Query struct {
 	Type: Select
@@ -198,7 +208,8 @@ query.Query struct {
 
 ### Example: UPDATE works
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a = '1'`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a = '1'`)
 
 query.Query struct {
 	Type: Update
@@ -219,7 +230,8 @@ query.Query struct {
 
 ### Example: UPDATE with multiple SETs works
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'`)
 
 query.Query struct {
 	Type: Update
@@ -240,7 +252,8 @@ query.Query struct {
 
 ### Example: UPDATE with multiple SETs and multiple conditions works
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1' AND b = '789'`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1' AND b = '789'`)
 
 query.Query struct {
 	Type: Update
@@ -268,7 +281,8 @@ query.Query struct {
 
 ### Example: DELETE with WHERE works
 
-```query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b = '1'`)
+```
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b = '1'`)
 
 query.Query struct {
 	Type: Delete
@@ -289,7 +303,8 @@ query.Query struct {
 
 ### Example: INSERT works
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES ('1')`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES ('1')`)
 
 query.Query struct {
 	Type: Insert
@@ -303,7 +318,8 @@ query.Query struct {
 
 ### Example: INSERT with multiple fields works
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )`)
 
 query.Query struct {
 	Type: Insert
@@ -317,7 +333,8 @@ query.Query struct {
 
 ### Example: INSERT with multiple fields and multiple values works
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' ),('4','5' ,'6' )`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' ),('4','5' ,'6' )`)
 
 query.Query struct {
 	Type: Insert
@@ -333,168 +350,192 @@ query.Query struct {
 
 ### Example: empty query fails
 
-```query, err := sqlparser.Parse(``)
+```
+query, err := sqlparser.Parse(``)
 
 query type cannot be empty
 ```
 
 ### Example: SELECT without FROM fails
 
-```query, err := sqlparser.Parse(`SELECT`)
+```
+query, err := sqlparser.Parse(`SELECT`)
 
 table name cannot be empty
 ```
 
 ### Example: SELECT without fields fails
 
-```query, err := sqlparser.Parse(`SELECT FROM 'a'`)
+```
+query, err := sqlparser.Parse(`SELECT FROM 'a'`)
 
 at SELECT: expected field to SELECT
 ```
 
 ### Example: SELECT with comma and empty field fails
 
-```query, err := sqlparser.Parse(`SELECT b, FROM 'a'`)
+```
+query, err := sqlparser.Parse(`SELECT b, FROM 'a'`)
 
 at SELECT: expected field to SELECT
 ```
 
 ### Example: SELECT with empty WHERE fails
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE`)
 
 at WHERE: empty WHERE clause
 ```
 
 ### Example: SELECT with WHERE with only operand fails
 
-```query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a`)
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a`)
 
 at WHERE: condition without operator
 ```
 
 ### Example: Empty UPDATE fails
 
-```query, err := sqlparser.Parse(`UPDATE`)
+```
+query, err := sqlparser.Parse(`UPDATE`)
 
 table name cannot be empty
 ```
 
 ### Example: Incomplete UPDATE with table name fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a'`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a'`)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
 
 ### Example: Incomplete UPDATE with table name and SET fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET`)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
 
 ### Example: Incomplete UPDATE with table name, SET with a field but no value and WHERE fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b WHERE`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b WHERE`)
 
 at UPDATE: expected '='
 ```
 
 ### Example: Incomplete UPDATE with table name, SET with a field and = but no value and WHERE fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = WHERE`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = WHERE`)
 
 at UPDATE: expected quoted value
 ```
 
 ### Example: Incomplete UPDATE due to no WHERE clause fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE`)
 
 at WHERE: empty WHERE clause
 ```
 
 ### Example: Incomplete UPDATE due incomplete WHERE clause fails
 
-```query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a`)
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a`)
 
 at WHERE: condition without operator
 ```
 
 ### Example: Empty DELETE fails
 
-```query, err := sqlparser.Parse(`DELETE FROM`)
+```
+query, err := sqlparser.Parse(`DELETE FROM`)
 
 table name cannot be empty
 ```
 
 ### Example: DELETE without WHERE fails
 
-```query, err := sqlparser.Parse(`DELETE FROM 'a'`)
+```
+query, err := sqlparser.Parse(`DELETE FROM 'a'`)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
 
 ### Example: DELETE with empty WHERE fails
 
-```query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE`)
+```
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE`)
 
 at WHERE: empty WHERE clause
 ```
 
 ### Example: DELETE with WHERE with field but no operator fails
 
-```query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b`)
+```
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b`)
 
 at WHERE: condition without operator
 ```
 
 ### Example: Empty INSERT fails
 
-```query, err := sqlparser.Parse(`INSERT INTO`)
+```
+query, err := sqlparser.Parse(`INSERT INTO`)
 
 table name cannot be empty
 ```
 
 ### Example: INSERT with no rows to insert fails
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a'`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a'`)
 
 at INSERT INTO: need at least one row to insert
 ```
 
 ### Example: INSERT with incomplete value section fails
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (`)
 
 at INSERT INTO: need at least one row to insert
 ```
 
 ### Example: INSERT with incomplete value section fails #2
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b`)
 
 at INSERT INTO: need at least one row to insert
 ```
 
 ### Example: INSERT with incomplete value section fails #3
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b)`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b)`)
 
 at INSERT INTO: need at least one row to insert
 ```
 
 ### Example: INSERT with incomplete value section fails #4
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES`)
 
 at INSERT INTO: need at least one row to insert
 ```
 
 ### Example: INSERT with incomplete row fails
 
-```query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES (`)
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES (`)
 
 at INSERT INTO: value count doesn't match field count
 ```
