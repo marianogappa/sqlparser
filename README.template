@@ -2,6 +2,27 @@
 {{- $operators := .Operators -}}
 # sqlparser - meant for querying csv files
 [![Build Status](https://img.shields.io/travis/marianogappa/sqlparser.svg)](https://travis-ci.org/marianogappa/sqlparser) [![Coverage Status](https://coveralls.io/repos/github/marianogappa/sqlparser/badge.svg?branch=master)](https://coveralls.io/github/MarianoGappa/sqlparser?branch=master) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/marianogappa/sqlparser/master/LICENSE) [![Go Report Card](https://goreportcard.com/badge/github.com/marianogappa/sqlparser?style=flat-square)](https://goreportcard.com/report/github.com/marianogappa/sqlparser) [![GoDoc](https://godoc.org/github.com/marianogappa/sqlparser?status.svg)](https://godoc.org/github.com/marianogappa/sqlparser)
+### Usage
+
+```
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/marianogappa/sqlparser"
+)
+
+func main() {
+	query, err := sqlparser.Parse("SELECT a, b, c FROM 'd' WHERE e = '1' AND f > '2'")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%+#v", query)
+}
+```
+
 {{range .NoErrorExamples}}
 ### Example: {{.Name}}
 
