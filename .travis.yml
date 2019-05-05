@@ -10,5 +10,6 @@ install:
 secure: "Bqfz/WUq/TJbAJTQYNE6+TLQoeRlksRIrkJ0OJlYhzK9p9n9Fn4JKLSiFVuJr+pM+ucGlSNouqY9q8KqgHW9PuFjN01YBZvXLj1Bpfq4+hgIxNCUHVZ2cgHwpfqHrgXA+tI6DiggBgZdh/uQb892vuYLBq4qp91nZAsdbZbZcNpEUsR+2UjpXUFmcQM2yfmEHYZ2c8cuCw9Riz05o9ZAl6FLQSPGm9A0elCOkPqpeK2y87xYDNowv11EO7QWFDas+mAEwyirudmPUgPLo0gYovVdDUg+9UVOxFnS0VBz1mdS7lhKFJ0WXrMEWX8sOymWbgmod71DTgXG9y8iW+zt+jcJZbMDA3JxmuA9IqOBFRAnzt23UtMZI6QgybhB+mZuJ54TlUlYGBw1RxfHN94leNTrXjw5HFARca/UGW07FYFDQXqqyjv2Hv0S079NDF0lv3JQ+ujjQR3clN06eEtegzcU5YSW+G73nrGXk/WsZqNQgSmRE95x0XW3pxL5Kr4FFDaeDexnGjPGjOllrJDTvTNs0y663nhF7yrPnDSDxkk0mEKLanCA+VKN8NGwsDx9V4HWH8sZ5UF+h6FvB0C5yh6J6YHPrYtjgZCd7KjRagGGo44K2Xfj1RfgznPYYzaEiQadVyUmvAMctAU0BmJYjgOqYABh6YXBKME/KLfhMjU="
 
 script:
+  - go mod vendor
   - go test -v -covermode=count -coverprofile=coverage.out ./...
   - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN; fi'
