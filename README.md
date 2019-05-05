@@ -1,4 +1,5 @@
 # sqlparser - meant for querying csv files
+[![Build Status](https://img.shields.io/travis/marianogappa/sqlparser.svg)](https://travis-ci.org/marianogappa/sqlparser) [![Coverage Status](https://coveralls.io/repos/github/MarianoGappa/sqlparser/badge.svg?branch=master)](https://coveralls.io/github/MarianoGappa/sqlparser?branch=master) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/marianogappa/sqlparser/master/LICENSE) [![Go Report Card](https://goreportcard.com/badge/github.com/marianogappa/sqlparser?style=flat-square)](https://goreportcard.com/report/github.com/marianogappa/sqlparser) [![GoDoc](https://godoc.org/github.com/marianogappa/sqlparser?status.svg)](https://godoc.org/github.com/marianogappa/sqlparser)
 
 ### Example: SELECT works
 
@@ -244,7 +245,7 @@ query.Query {
             Operand2: 1,
             Operand2IsField: false,
         }]
-	Updates: map[c:bye b:hello]
+	Updates: map[b:hello c:bye]
 	Inserts: []
 	Fields: []
 }
