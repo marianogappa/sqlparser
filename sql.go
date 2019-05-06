@@ -372,8 +372,9 @@ func (p *parser) peekWithLength() (string, int) {
 		return "", 0
 	}
 	for _, rWord := range reservedWords {
-		if strings.ToUpper(p.sql[p.i:min(len(p.sql), p.i+len(rWord))]) == rWord {
-			return p.sql[p.i : p.i+len(rWord)], len(rWord)
+		token := strings.ToUpper(p.sql[p.i:min(len(p.sql), p.i+len(rWord))])
+		if token == rWord {
+			return token, len(token)
 		}
 	}
 	if p.sql[p.i] == '\'' { // Quoted string
