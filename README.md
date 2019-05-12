@@ -199,6 +199,36 @@ query.Query {
 }
 ```
 
+### Example: SELECT * works
+
+```
+query, err := sqlparser.Parse(`SELECT * FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [*]
+}
+```
+
+### Example: SELECT a, * works
+
+```
+query, err := sqlparser.Parse(`SELECT a, * FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [a *]
+}
+```
+
 ### Example: SELECT with WHERE with two conditions using AND works
 
 ```
@@ -560,5 +590,13 @@ at INSERT INTO: need at least one row to insert
 query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES (`)
 
 at INSERT INTO: value count doesn't match field count
+```
+
+### Example: INSERT * fails
+
+```
+query, err := sqlparser.Parse(`INSERT INTO 'a' (*) VALUES ('1')`)
+
+at INSERT INTO: expected at least one field to insert
 ```
 

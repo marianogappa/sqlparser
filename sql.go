@@ -115,7 +115,7 @@ func (p *parser) doParse() (query.Query, error) {
 			}
 		case stepSelectField:
 			identifier := p.peek()
-			if !isIdentifier(identifier) {
+			if !isIdentifierOrAsterisk(identifier) {
 				return p.query, fmt.Errorf("at SELECT: expected field to SELECT")
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
@@ -397,7 +397,7 @@ func (p *parser) peekQuotedStringWithLength() (string, int) {
 
 func (p *parser) peekIdentifierWithLength() (string, int) {
 	for i := p.i; i < len(p.sql); i++ {
-		if matched, _ := regexp.MatchString(`[a-zA-Z0-9_]`, string(p.sql[i])); !matched {
+		if matched, _ := regexp.MatchString(`[a-zA-Z0-9_*]`, string(p.sql[i])); !matched {
 			return p.sql[p.i:i], len(p.sql[p.i:i])
 		}
 	}
@@ -458,6 +458,10 @@ func isIdentifier(s string) bool {
 	}
 	matched, _ := regexp.MatchString("[a-zA-Z_][a-zA-Z_0-9]*", s)
 	return matched
+}
+
+func isIdentifierOrAsterisk(s string) bool {
+	return isIdentifier(s) || s == "*"
 }
 
 func min(a, b int) int {

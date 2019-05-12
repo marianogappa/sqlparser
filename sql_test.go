@@ -161,6 +161,28 @@ func TestSQL(t *testing.T) {
 			Err: nil,
 		},
 		{
+			Name: "SELECT * works",
+			SQL:  "SELECT * FROM 'b'",
+			Expected: query.Query{
+				Type:       query.Select,
+				TableName:  "b",
+				Fields:     []string{"*"},
+				Conditions: nil,
+			},
+			Err: nil,
+		},
+		{
+			Name: "SELECT a, * works",
+			SQL:  "SELECT a, * FROM 'b'",
+			Expected: query.Query{
+				Type:       query.Select,
+				TableName:  "b",
+				Fields:     []string{"a", "*"},
+				Conditions: nil,
+			},
+			Err: nil,
+		},
+		{
 			Name: "SELECT with WHERE with two conditions using AND works",
 			SQL:  "SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'",
 			Expected: query.Query{
@@ -344,6 +366,12 @@ func TestSQL(t *testing.T) {
 				Inserts:   [][]string{{"1"}},
 			},
 			Err: nil,
+		},
+		{
+			Name:     "INSERT * fails",
+			SQL:      "INSERT INTO 'a' (*) VALUES ('1')",
+			Expected: query.Query{},
+			Err:      fmt.Errorf("at INSERT INTO: expected at least one field to insert"),
 		},
 		{
 			Name: "INSERT with multiple fields works",
