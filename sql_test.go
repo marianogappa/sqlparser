@@ -252,6 +252,19 @@ func TestSQL(t *testing.T) {
 			Err: nil,
 		},
 		{
+			Name: "UPDATE works with simple quote inside",
+			SQL:  "UPDATE 'a' SET b = 'hello\\'world' WHERE a = '1'",
+			Expected: query.Query{
+				Type:      query.Update,
+				TableName: "a",
+				Updates:   map[string]string{"b": "hello\\'world"},
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
+				},
+			},
+			Err: nil,
+		},
+		{
 			Name: "UPDATE with multiple SETs works",
 			SQL:  "UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'",
 			Expected: query.Query{

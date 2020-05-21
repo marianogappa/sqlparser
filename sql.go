@@ -388,7 +388,7 @@ func (p *parser) peekQuotedStringWithLength() (string, int) {
 		return "", 0
 	}
 	for i := p.i + 1; i < len(p.sql); i++ {
-		if p.sql[i] == '\'' {
+		if p.sql[i] == '\'' && p.sql[i-1] != '\\' {
 			return p.sql[p.i+1 : i], len(p.sql[p.i+1:i]) + 2 // +2 for the two quotes
 		}
 	}
