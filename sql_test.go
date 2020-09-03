@@ -161,6 +161,19 @@ func TestSQL(t *testing.T) {
 			Err: nil,
 		},
 		{
+			Name: "SELECT with WHERE with != works (comparing field against another field)",
+			SQL:  "SELECT a, c, d FROM 'b' WHERE a != b",
+			Expected: query.Query{
+				Type:      query.Select,
+				TableName: "b",
+				Fields:    []string{"a", "c", "d"},
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "b", Operand2IsField: true},
+				},
+			},
+			Err: nil,
+		},
+		{
 			Name: "SELECT * works",
 			SQL:  "SELECT * FROM 'b'",
 			Expected: query.Query{

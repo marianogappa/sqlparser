@@ -253,13 +253,19 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepWhereValue
 		case stepWhereValue:
-			quotedValue, ln := p.peekQuotedStringWithLength()
-			if ln == 0 {
-				return p.query, fmt.Errorf("at WHERE: expected quoted value")
-			}
 			currentCondition := p.query.Conditions[len(p.query.Conditions)-1]
-			currentCondition.Operand2 = quotedValue
-			currentCondition.Operand2IsField = false
+			identifier := p.peek()
+			if isIdentifier(identifier) {
+				currentCondition.Operand2 = identifier
+				currentCondition.Operand2IsField = true
+			} else {
+				quotedValue, ln := p.peekQuotedStringWithLength()
+				if ln == 0 {
+					return p.query, fmt.Errorf("at WHERE: expected quoted value")
+				}
+				currentCondition.Operand2 = quotedValue
+				currentCondition.Operand2IsField = false
+			}
 			p.query.Conditions[len(p.query.Conditions)-1] = currentCondition
 			p.pop()
 			p.step = stepWhereAnd

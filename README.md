@@ -199,6 +199,28 @@ query.Query {
 }
 ```
 
+### Example: SELECT with WHERE with != works (comparing field against another field)
+
+```
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != b`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: [
+        {
+            Operand1: a,
+            Operand1IsField: true,
+            Operator: Ne,
+            Operand2: b,
+            Operand2IsField: true,
+        }]
+	Updates: map[]
+	Inserts: []
+	Fields: [a c d]
+}
+```
+
 ### Example: SELECT * works
 
 ```
@@ -275,6 +297,28 @@ query.Query {
             Operand2IsField: false,
         }]
 	Updates: map[b:hello]
+	Inserts: []
+	Fields: []
+}
+```
+
+### Example: UPDATE works with simple quote inside
+
+```
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello\'world' WHERE a = '1'`)
+
+query.Query {
+	Type: Update
+	TableName: a
+	Conditions: [
+        {
+            Operand1: a,
+            Operand1IsField: true,
+            Operator: Eq,
+            Operand2: 1,
+            Operand2IsField: false,
+        }]
+	Updates: map[b:hello\'world]
 	Inserts: []
 	Fields: []
 }
