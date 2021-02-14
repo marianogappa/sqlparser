@@ -67,6 +67,21 @@ query.Query {
 }
 ```
 
+### Example: SELECT with alias works
+
+```
+query, err := sqlparser.Parse(`SELECT a as z, b as y FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [z y]
+}
+```
+
 ### Example: SELECT with WHERE with = works
 
 ```

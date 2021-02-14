@@ -71,6 +71,17 @@ func TestSQL(t *testing.T) {
 			Err:      nil,
 		},
 		{
+			Name: "SELECT with alias works",
+			SQL:  "SELECT a as z, b as y FROM 'b'",
+			Expected: query.Query{
+				Type:      query.Select,
+				TableName: "b",
+				Fields:    []string{"z", "y"},
+			},
+			Err: nil,
+		},
+
+		{
 			Name:     "SELECT with empty WHERE fails",
 			SQL:      "SELECT a, c, d FROM 'b' WHERE",
 			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},

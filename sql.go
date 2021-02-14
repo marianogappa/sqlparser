@@ -121,6 +121,16 @@ func (p *parser) doParse() (query.Query, error) {
 			p.query.Fields = append(p.query.Fields, identifier)
 			p.pop()
 			maybeFrom := p.peek()
+			if strings.ToUpper(maybeFrom) == "AS" {
+				p.pop()
+				alias := p.peek()
+				if !isIdentifier(alias) {
+					return p.query, fmt.Errorf("at SELECT: expected field alias for \"" + identifier + " as\" to SELECT")
+				}
+				p.query.Fields[len(p.query.Fields)-1] = alias
+				p.pop()
+				maybeFrom = p.peek()
+			}
 			if strings.ToUpper(maybeFrom) == "FROM" {
 				p.step = stepSelectFrom
 				continue
