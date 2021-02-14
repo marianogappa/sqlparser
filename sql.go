@@ -127,7 +127,10 @@ func (p *parser) doParse() (query.Query, error) {
 				if !isIdentifier(alias) {
 					return p.query, fmt.Errorf("at SELECT: expected field alias for \"" + identifier + " as\" to SELECT")
 				}
-				p.query.Fields[len(p.query.Fields)-1] = alias
+				if p.query.Aliases == nil {
+					p.query.Aliases = make(map[string]string)
+				}
+				p.query.Aliases[identifier] = alias
 				p.pop()
 				maybeFrom = p.peek()
 			}
@@ -380,7 +383,7 @@ func (p *parser) popWhitespace() {
 
 var reservedWords = []string{
 	"(", ")", ">=", "<=", "!=", ",", "=", ">", "<", "SELECT", "INSERT INTO", "VALUES", "UPDATE", "DELETE FROM",
-	"WHERE", "FROM", "SET",
+	"WHERE", "FROM", "SET", "AS",
 }
 
 func (p *parser) peekWithLength() (string, int) {

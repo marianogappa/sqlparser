@@ -72,11 +72,15 @@ func TestSQL(t *testing.T) {
 		},
 		{
 			Name: "SELECT with alias works",
-			SQL:  "SELECT a as z, b as y FROM 'b'",
+			SQL:  "SELECT a as z, b as y, c FROM 'b'",
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"z", "y"},
+				Fields:    []string{"a", "b", "c"},
+				Aliases: map[string]string{
+					"a": "z",
+					"b": "y",
+				},
 			},
 			Err: nil,
 		},
