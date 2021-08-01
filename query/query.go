@@ -8,6 +8,7 @@ type Query struct {
 	Updates    map[string]string
 	Inserts    [][]string
 	Fields     []string // Used for SELECT (i.e. SELECTed field names) and INSERT (INSERTEDed field names)
+	Aliases    []string // Used for SELECT (i.e. SELECTed field_name AS alias_name)
 }
 
 // Type is the type of SQL query, e.g. SELECT/UPDATE

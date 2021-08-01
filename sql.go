@@ -120,8 +120,21 @@ func (p *parser) doParse() (query.Query, error) {
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
 			p.pop()
-			maybeFrom := p.peek()
-			if strings.ToUpper(maybeFrom) == "FROM" {
+			maybeFrom := strings.ToUpper(p.peek())
+			if maybeFrom == "AS" {
+				// alias
+				p.pop()
+				alias := p.peek()
+				if !isIdentifierOrAsterisk(alias) {
+					return p.query, fmt.Errorf("at SELECT: expected alias (AS) for %s", identifier)
+				}
+				p.query.Aliases = append(p.query.Aliases, alias)
+				p.pop()
+				maybeFrom = p.peek()
+			} else {
+				p.query.Aliases = append(p.query.Aliases, "")
+			}
+			if maybeFrom == "FROM" {
 				p.step = stepSelectFrom
 				continue
 			}
@@ -369,7 +382,7 @@ func (p *parser) popWhitespace() {
 }
 
 var reservedWords = []string{
-	"(", ")", ">=", "<=", "!=", ",", "=", ">", "<", "SELECT", "INSERT INTO", "VALUES", "UPDATE", "DELETE FROM",
+	"(", ")", ">=", "<=", "!=", ",", "=", ">", "<", "AS", "SELECT", "INSERT INTO", "VALUES", "UPDATE", "DELETE FROM",
 	"WHERE", "FROM", "SET",
 }
 
@@ -404,6 +417,12 @@ func (p *parser) peekQuotedStringWithLength() (string, int) {
 func (p *parser) peekIdentifierWithLength() (string, int) {
 	for i := p.i; i < len(p.sql); i++ {
 		if matched, _ := regexp.MatchString(`[a-zA-Z0-9_*]`, string(p.sql[i])); !matched {
+			if p.sql[i] == '(' {
+				// detect function
+				if end := strings.IndexByte(p.sql[i+1:], ')'); end >= 0 {
+					i += end + 2
+				}
+			}
 			return p.sql[p.i:i], len(p.sql[p.i:i])
 		}
 	}
@@ -443,6 +462,9 @@ func (p *parser) validate() error {
 				return fmt.Errorf("at INSERT INTO: value count doesn't match field count")
 			}
 		}
+	}
+	if p.query.Type == query.Select && len(p.query.Fields) != len(p.query.Aliases) {
+		return fmt.Errorf("fileds and aliases count mismatch")
 	}
 	return nil
 }

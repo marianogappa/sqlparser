@@ -28,58 +28,82 @@ type output struct {
 
 func TestSQL(t *testing.T) {
 	ts := []testCase{
+		// {
+		// 	Name:     "empty query fails",
+		// 	SQL:      "",
+		// 	Expected: query.Query{},
+		// 	Err:      fmt.Errorf("query type cannot be empty"),
+		// },
+		// {
+		// 	Name:     "SELECT without FROM fails",
+		// 	SQL:      "SELECT",
+		// 	Expected: query.Query{Type: query.Select},
+		// 	Err:      fmt.Errorf("table name cannot be empty"),
+		// },
+		// {
+		// 	Name:     "SELECT without fields fails",
+		// 	SQL:      "SELECT FROM 'a'",
+		// 	Expected: query.Query{Type: query.Select},
+		// 	Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
+		// },
+		// {
+		// 	Name:     "SELECT with comma and empty field fails",
+		// 	SQL:      "SELECT b, FROM 'a'",
+		// 	Expected: query.Query{Type: query.Select},
+		// 	Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
+		// {
+		// 	Name:     "SELECT with incomplete alias fails",
+		// 	SQL:      "SELECT a AS",
+		// 	Expected: query.Query{Type: query.Select},
+		// 	Err:      fmt.Errorf("at SELECT: expected alias (AS) for a"),
+		// },
+		// },
+		// {
+		// 	Name:     "SELECT version() as version",
+		// 	SQL:      "SELECT version() as version",
+		// 	Expected: query.Query{Type: query.Select, Fields: []string{"version() as version"}},
+		// 	Err:      nil,
+		// },
+		// {
+		// 	Name:     "SELECT works",
+		// 	SQL:      "SELECT a FROM 'b'",
+		// 	Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
+		// 	Err:      nil,
+		// },
+		// {
+		// 	Name:     "SELECT with alias works",
+		// 	SQL:      "SELECT a AS text FROM 'b'",
+		// 	Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{"text"}},
+		// 	Err:      nil,
+		// },
 		{
-			Name:     "empty query fails",
-			SQL:      "",
-			Expected: query.Query{},
-			Err:      fmt.Errorf("query type cannot be empty"),
-		},
-		{
-			Name:     "SELECT without FROM fails",
-			SQL:      "SELECT",
-			Expected: query.Query{Type: query.Select},
-			Err:      fmt.Errorf("table name cannot be empty"),
-		},
-		{
-			Name:     "SELECT without fields fails",
-			SQL:      "SELECT FROM 'a'",
-			Expected: query.Query{Type: query.Select},
-			Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
-		},
-		{
-			Name:     "SELECT with comma and empty field fails",
-			SQL:      "SELECT b, FROM 'a'",
-			Expected: query.Query{Type: query.Select},
-			Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
-		},
-		{
-			Name:     "SELECT works",
-			SQL:      "SELECT a FROM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
+			Name:     "SELECT with alias works",
+			SQL:      "SELECT version(a) AS version FROM 'b'",
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"version(a)"}, Aliases: []string{"version"}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT works with lowercase",
 			SQL:      "select a fRoM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{""}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT many fields works",
 			SQL:      "SELECT a, c, d FROM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT with empty WHERE fails",
 			SQL:      "SELECT a, c, d FROM 'b' WHERE",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      fmt.Errorf("at WHERE: empty WHERE clause"),
 		},
 		{
 			Name:     "SELECT with WHERE with only operand fails",
 			SQL:      "SELECT a, c, d FROM 'b' WHERE a",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      fmt.Errorf("at WHERE: condition without operator"),
 		},
 		{
@@ -88,7 +112,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "", Operand2IsField: false},
 				},
@@ -101,7 +125,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Lt, Operand2: "1", Operand2IsField: false},
 				},
@@ -114,7 +138,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Lte, Operand2: "1", Operand2IsField: false},
 				},
@@ -127,7 +151,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Gt, Operand2: "1", Operand2IsField: false},
 				},
@@ -140,7 +164,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Gte, Operand2: "1", Operand2IsField: false},
 				},
@@ -153,7 +177,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
 				},
@@ -166,7 +190,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "b", Operand2IsField: true},
 				},
@@ -180,6 +204,7 @@ func TestSQL(t *testing.T) {
 				Type:       query.Select,
 				TableName:  "b",
 				Fields:     []string{"*"},
+				Aliases:    []string{""},
 				Conditions: nil,
 			},
 			Err: nil,
@@ -188,9 +213,9 @@ func TestSQL(t *testing.T) {
 			Name: "SELECT a, * works",
 			SQL:  "SELECT a, * FROM 'b'",
 			Expected: query.Query{
-				Type:       query.Select,
-				TableName:  "b",
-				Fields:     []string{"a", "*"},
+				Type:      query.Select,
+				TableName: "b",
+				Fields:    []string{"a", "*"}, Aliases: []string{"", ""},
 				Conditions: nil,
 			},
 			Err: nil,
@@ -201,7 +226,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
 					{Operand1: "b", Operand1IsField: true, Operator: query.Eq, Operand2: "2", Operand2IsField: false},
