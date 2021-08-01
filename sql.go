@@ -416,7 +416,12 @@ func (p *parser) peekQuotedStringWithLength() (string, int) {
 
 func (p *parser) peekIdentifierWithLength() (string, int) {
 	for i := p.i; i < len(p.sql); i++ {
-		if matched, _ := regexp.MatchString(`[a-zA-Z0-9_*]`, string(p.sql[i])); !matched {
+		isIdentifierSymbol := (p.sql[i] >= 'a' && p.sql[i] <= 'z') ||
+			(p.sql[i] >= 'A' && p.sql[i] <= 'Z') ||
+			(p.sql[i] >= '0' && p.sql[i] <= '9') ||
+			p.sql[i] == '*' ||
+			p.sql[i] == '_'
+		if !isIdentifierSymbol {
 			if p.sql[i] == '(' {
 				// detect function
 				if end := strings.IndexByte(p.sql[i+1:], ')'); end >= 0 {
@@ -478,18 +483,19 @@ func (p *parser) logError() {
 	fmt.Println(p.err)
 }
 
+var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
+
 func isIdentifier(s string) bool {
 	for _, rw := range reservedWords {
 		if strings.ToUpper(s) == rw {
 			return false
 		}
 	}
-	matched, _ := regexp.MatchString("[a-zA-Z_][a-zA-Z_0-9]*", s)
-	return matched
+	return regexIdentifier.MatchString(s)
 }
 
 func isIdentifierOrAsterisk(s string) bool {
-	return isIdentifier(s) || s == "*"
+	return s == "*" || isIdentifier(s)
 }
 
 func min(a, b int) int {
