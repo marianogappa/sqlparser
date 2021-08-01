@@ -9,21 +9,22 @@ import (
 )
 
 // Parse takes a string representing a SQL query and parses it into a query.Query struct. It may fail.
-func Parse(sql string) (query.Query, error) {
+func Parse(sql string, verbose bool) (query.Query, error) {
 	sql = strings.TrimSpace(sql)
 	return (&parser{
 		sql:      sql,
 		sqlUpper: strings.ToUpper(sql),
 		step:     stepType,
+		verbose:  verbose,
 	}).parse()
 }
 
 // ParseMany takes a string slice representing many SQL queries and parses them into a query.Query struct slice.
 // It may fail. If it fails, it will stop at the first failure.
-func ParseMany(sqls []string) ([]query.Query, error) {
+func ParseMany(sqls []string, verbose bool) ([]query.Query, error) {
 	qs := []query.Query{}
 	for _, sql := range sqls {
-		q, err := Parse(sql)
+		q, err := Parse(sql, verbose)
 		if err != nil {
 			return qs, err
 		}
@@ -71,7 +72,9 @@ type parser struct {
 	sqlUpper        string
 	step            step
 	query           query.Query
+	verbose         bool
 	err             error
+	errArr          [3]string
 	nextUpdateField string
 }
 
@@ -503,12 +506,23 @@ func (p *parser) validate() error {
 }
 
 func (p *parser) logError() {
-	if p.err == nil {
+	if p.err == nil || !p.verbose {
 		return
 	}
 	fmt.Println(p.sql)
 	fmt.Println(strings.Repeat(" ", p.i) + "^")
 	fmt.Println(p.err)
+}
+
+func (p *parser) FormatError() (error, [3]string) {
+	if p.err == nil {
+		return nil, p.errArr
+	}
+	p.errArr[0] = p.sql
+	p.errArr[1] = strings.Repeat(" ", p.i) + "^"
+	p.errArr[1] = p.err.Error()
+
+	return p.err, p.errArr
 }
 
 var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")

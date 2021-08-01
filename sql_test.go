@@ -451,7 +451,7 @@ func TestSQL(t *testing.T) {
 	output := output{Types: query.TypeString, Operators: query.OperatorString}
 	for _, tc := range ts {
 		t.Run(tc.Name, func(t *testing.T) {
-			actual, err := ParseMany([]string{tc.SQL})
+			actual, err := ParseMany([]string{tc.SQL}, true)
 			if tc.Err != nil && err == nil {
 				t.Errorf("Error should have been %v", tc.Err)
 			}
@@ -477,7 +477,7 @@ func TestSQL(t *testing.T) {
 func BenchmarkSQLSelect(b *testing.B) {
 	sql := "SELECT a AS text FROM 'b' WHERE c = 'c' AND d = 'd'"
 	for i := 0; i < b.N; i++ {
-		q, err := Parse(sql)
+		q, err := Parse(sql, false)
 		if err != nil {
 			b.Errorf("Error should have been %v: %v", err, q)
 		}
@@ -487,7 +487,7 @@ func BenchmarkSQLSelect(b *testing.B) {
 func BenchmarkSQLInsert(b *testing.B) {
 	sql := "INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )"
 	for i := 0; i < b.N; i++ {
-		q, err := Parse(sql)
+		q, err := Parse(sql, false)
 		if err != nil {
 			b.Errorf("Error should have been %v: %v", err, q)
 		}

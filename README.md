@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	query, err := sqlparser.Parse("SELECT a, b, c FROM 'd' WHERE e = '1' AND f > '2'")
+	query, err := sqlparser.Parse("SELECT a, b, c FROM 'd' WHERE e = '1' AND f > '2'", false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func main() {
 ### Example: SELECT version() as version
 
 ```
-query, err := sqlparser.Parse(`SELECT version() as version`)
+query, err := sqlparser.Parse(`SELECT version() as version`, false)
 
 query.Query {
 	Type: Select
@@ -40,7 +40,7 @@ query.Query {
 ### Example: SELECT works
 
 ```
-query, err := sqlparser.Parse(`SELECT a FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT a FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -55,7 +55,7 @@ query.Query {
 ### Example: SELECT with alias works
 
 ```
-query, err := sqlparser.Parse(`SELECT a AS text FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT a AS text FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -70,7 +70,7 @@ query.Query {
 ### Example: SELECT with alias works
 
 ```
-query, err := sqlparser.Parse(`SELECT version(a) AS version FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT version(a) AS version FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -85,7 +85,7 @@ query.Query {
 ### Example: SELECT works with lowercase
 
 ```
-query, err := sqlparser.Parse(`select a fRoM 'b'`)
+query, err := sqlparser.Parse(`select a fRoM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -100,7 +100,7 @@ query.Query {
 ### Example: SELECT many fields works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -115,7 +115,7 @@ query.Query {
 ### Example: SELECT with WHERE with = works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a = ''`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a = ''`, false)
 
 query.Query {
 	Type: Select
@@ -137,7 +137,7 @@ query.Query {
 ### Example: SELECT with WHERE with < works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a < '1'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a < '1'`, false)
 
 query.Query {
 	Type: Select
@@ -159,7 +159,7 @@ query.Query {
 ### Example: SELECT with WHERE with <= works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a <= '1'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a <= '1'`, false)
 
 query.Query {
 	Type: Select
@@ -181,7 +181,7 @@ query.Query {
 ### Example: SELECT with WHERE with > works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a > '1'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a > '1'`, false)
 
 query.Query {
 	Type: Select
@@ -203,7 +203,7 @@ query.Query {
 ### Example: SELECT with WHERE with >= works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a >= '1'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a >= '1'`, false)
 
 query.Query {
 	Type: Select
@@ -225,7 +225,7 @@ query.Query {
 ### Example: SELECT with WHERE with != works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1'`, false)
 
 query.Query {
 	Type: Select
@@ -247,7 +247,7 @@ query.Query {
 ### Example: SELECT with WHERE with != works (comparing field against another field)
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != b`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != b`, false)
 
 query.Query {
 	Type: Select
@@ -269,7 +269,7 @@ query.Query {
 ### Example: SELECT * works
 
 ```
-query, err := sqlparser.Parse(`SELECT * FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT * FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -284,7 +284,7 @@ query.Query {
 ### Example: SELECT a, * works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, * FROM 'b'`)
+query, err := sqlparser.Parse(`SELECT a, * FROM 'b'`, false)
 
 query.Query {
 	Type: Select
@@ -299,7 +299,7 @@ query.Query {
 ### Example: SELECT with WHERE with two conditions using AND works
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a != '1' AND b = '2'`, false)
 
 query.Query {
 	Type: Select
@@ -328,7 +328,7 @@ query.Query {
 ### Example: UPDATE works
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a = '1'`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a = '1'`, false)
 
 query.Query {
 	Type: Update
@@ -350,7 +350,7 @@ query.Query {
 ### Example: UPDATE works with simple quote inside
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello\'world' WHERE a = '1'`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello\'world' WHERE a = '1'`, false)
 
 query.Query {
 	Type: Update
@@ -372,7 +372,7 @@ query.Query {
 ### Example: UPDATE with multiple SETs works
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1'`, false)
 
 query.Query {
 	Type: Update
@@ -394,7 +394,7 @@ query.Query {
 ### Example: UPDATE with multiple SETs and multiple conditions works
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1' AND b = '789'`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello', c = 'bye' WHERE a = '1' AND b = '789'`, false)
 
 query.Query {
 	Type: Update
@@ -423,7 +423,7 @@ query.Query {
 ### Example: DELETE with WHERE works
 
 ```
-query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b = '1'`)
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b = '1'`, false)
 
 query.Query {
 	Type: Delete
@@ -445,7 +445,7 @@ query.Query {
 ### Example: INSERT works
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES ('1')`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES ('1')`, false)
 
 query.Query {
 	Type: Insert
@@ -460,7 +460,7 @@ query.Query {
 ### Example: INSERT with multiple fields works
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )`, false)
 
 query.Query {
 	Type: Insert
@@ -475,7 +475,7 @@ query.Query {
 ### Example: INSERT with multiple fields and multiple values works
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' ),('4','5' ,'6' )`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' ),('4','5' ,'6' )`, false)
 
 query.Query {
 	Type: Insert
@@ -492,7 +492,7 @@ query.Query {
 ### Example: empty query fails
 
 ```
-query, err := sqlparser.Parse(``)
+query, err := sqlparser.Parse(``, false)
 
 query type cannot be empty
 ```
@@ -500,7 +500,7 @@ query type cannot be empty
 ### Example: SELECT without FROM fails
 
 ```
-query, err := sqlparser.Parse(`SELECT`)
+query, err := sqlparser.Parse(`SELECT`, false)
 
 table name cannot be empty
 ```
@@ -508,7 +508,7 @@ table name cannot be empty
 ### Example: SELECT without fields fails
 
 ```
-query, err := sqlparser.Parse(`SELECT FROM 'a'`)
+query, err := sqlparser.Parse(`SELECT FROM 'a'`, false)
 
 at SELECT: expected field to SELECT
 ```
@@ -516,7 +516,7 @@ at SELECT: expected field to SELECT
 ### Example: SELECT with comma and empty field fails
 
 ```
-query, err := sqlparser.Parse(`SELECT b, FROM 'a'`)
+query, err := sqlparser.Parse(`SELECT b, FROM 'a'`, false)
 
 at SELECT: expected field to SELECT
 ```
@@ -524,7 +524,7 @@ at SELECT: expected field to SELECT
 ### Example: SELECT with incomplete alias fails
 
 ```
-query, err := sqlparser.Parse(`SELECT a AS`)
+query, err := sqlparser.Parse(`SELECT a AS`, false)
 
 at SELECT: expected alias (AS) for a
 ```
@@ -532,7 +532,7 @@ at SELECT: expected alias (AS) for a
 ### Example: SELECT with empty WHERE fails
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE`, false)
 
 at WHERE: empty WHERE clause
 ```
@@ -540,7 +540,7 @@ at WHERE: empty WHERE clause
 ### Example: SELECT with WHERE with only operand fails
 
 ```
-query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a`)
+query, err := sqlparser.Parse(`SELECT a, c, d FROM 'b' WHERE a`, false)
 
 at WHERE: condition without operator
 ```
@@ -548,7 +548,7 @@ at WHERE: condition without operator
 ### Example: Empty UPDATE fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE`)
+query, err := sqlparser.Parse(`UPDATE`, false)
 
 table name cannot be empty
 ```
@@ -556,7 +556,7 @@ table name cannot be empty
 ### Example: Incomplete UPDATE with table name fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a'`)
+query, err := sqlparser.Parse(`UPDATE 'a'`, false)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
@@ -564,7 +564,7 @@ at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ### Example: Incomplete UPDATE with table name and SET fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET`, false)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
@@ -572,7 +572,7 @@ at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ### Example: Incomplete UPDATE with table name, SET with a field but no value and WHERE fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b WHERE`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b WHERE`, false)
 
 at UPDATE: expected '='
 ```
@@ -580,7 +580,7 @@ at UPDATE: expected '='
 ### Example: Incomplete UPDATE with table name, SET with a field and = but no value and WHERE fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = WHERE`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = WHERE`, false)
 
 at UPDATE: expected quoted value
 ```
@@ -588,7 +588,7 @@ at UPDATE: expected quoted value
 ### Example: Incomplete UPDATE due to no WHERE clause fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE`, false)
 
 at WHERE: empty WHERE clause
 ```
@@ -596,7 +596,7 @@ at WHERE: empty WHERE clause
 ### Example: Incomplete UPDATE due incomplete WHERE clause fails
 
 ```
-query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a`)
+query, err := sqlparser.Parse(`UPDATE 'a' SET b = 'hello' WHERE a`, false)
 
 at WHERE: condition without operator
 ```
@@ -604,7 +604,7 @@ at WHERE: condition without operator
 ### Example: Empty DELETE fails
 
 ```
-query, err := sqlparser.Parse(`DELETE FROM`)
+query, err := sqlparser.Parse(`DELETE FROM`, false)
 
 table name cannot be empty
 ```
@@ -612,7 +612,7 @@ table name cannot be empty
 ### Example: DELETE without WHERE fails
 
 ```
-query, err := sqlparser.Parse(`DELETE FROM 'a'`)
+query, err := sqlparser.Parse(`DELETE FROM 'a'`, false)
 
 at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ```
@@ -620,7 +620,7 @@ at WHERE: WHERE clause is mandatory for UPDATE & DELETE
 ### Example: DELETE with empty WHERE fails
 
 ```
-query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE`)
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE`, false)
 
 at WHERE: empty WHERE clause
 ```
@@ -628,7 +628,7 @@ at WHERE: empty WHERE clause
 ### Example: DELETE with WHERE with field but no operator fails
 
 ```
-query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b`)
+query, err := sqlparser.Parse(`DELETE FROM 'a' WHERE b`, false)
 
 at WHERE: condition without operator
 ```
@@ -636,7 +636,7 @@ at WHERE: condition without operator
 ### Example: Empty INSERT fails
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO`)
+query, err := sqlparser.Parse(`INSERT INTO`, false)
 
 table name cannot be empty
 ```
@@ -644,7 +644,7 @@ table name cannot be empty
 ### Example: INSERT with no rows to insert fails
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a'`)
+query, err := sqlparser.Parse(`INSERT INTO 'a'`, false)
 
 at INSERT INTO: need at least one row to insert
 ```
@@ -652,7 +652,7 @@ at INSERT INTO: need at least one row to insert
 ### Example: INSERT with incomplete value section fails
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (`, false)
 
 at INSERT INTO: need at least one row to insert
 ```
@@ -660,7 +660,7 @@ at INSERT INTO: need at least one row to insert
 ### Example: INSERT with incomplete value section fails #2
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b`, false)
 
 at INSERT INTO: need at least one row to insert
 ```
@@ -668,7 +668,7 @@ at INSERT INTO: need at least one row to insert
 ### Example: INSERT with incomplete value section fails #3
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b)`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b)`, false)
 
 at INSERT INTO: need at least one row to insert
 ```
@@ -676,7 +676,7 @@ at INSERT INTO: need at least one row to insert
 ### Example: INSERT with incomplete value section fails #4
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES`, false)
 
 at INSERT INTO: need at least one row to insert
 ```
@@ -684,7 +684,7 @@ at INSERT INTO: need at least one row to insert
 ### Example: INSERT with incomplete row fails
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES (`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (b) VALUES (`, false)
 
 at INSERT INTO: value count doesn't match field count
 ```
@@ -692,7 +692,7 @@ at INSERT INTO: value count doesn't match field count
 ### Example: INSERT * fails
 
 ```
-query, err := sqlparser.Parse(`INSERT INTO 'a' (*) VALUES ('1')`)
+query, err := sqlparser.Parse(`INSERT INTO 'a' (*) VALUES ('1')`, false)
 
 at INSERT INTO: expected at least one field to insert
 ```
