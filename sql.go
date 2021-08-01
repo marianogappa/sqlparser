@@ -2,7 +2,6 @@ package sqlparser
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/marianogappa/sqlparser/query"
@@ -525,16 +524,34 @@ func (p *parser) FormatError() (error, [3]string) {
 	return p.err, p.errArr
 }
 
-var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
+//var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
 
 func isIdentifier(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
 	u := strings.ToUpper(s)
 	for _, rw := range reservedWords {
 		if u == rw {
 			return false
 		}
 	}
-	return regexIdentifier.MatchString(s)
+	//return regexIdentifier.MatchString(s)
+	if (s[0] >= 'a' && s[0] <= 'z') ||
+		(s[0] >= 'A' && s[0] <= 'Z') ||
+		s[0] == '_' {
+		// for i := 1; i < len(s); i++ {
+		// 	isIdentifierSymbol := (s[i] >= 'a' && s[i] <= 'z') ||
+		// 		(s[i] >= 'A' && s[i] <= 'Z') ||
+		// 		(s[i] >= '0' && s[i] <= '9') ||
+		// 		s[i] == '_'
+		// 	if !isIdentifierSymbol {
+		// 		return false
+		// 	}
+		// }
+		return true
+	}
+	return false
 }
 
 func isIdentifierOrAsterisk(s string) bool {
