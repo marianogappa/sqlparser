@@ -475,7 +475,7 @@ func TestSQL(t *testing.T) {
 }
 
 func BenchmarkSQLSelect(b *testing.B) {
-	sql := "SELECT a AS text FROM 'b'"
+	sql := "SELECT a AS text FROM 'b' WHERE c = 'c' AND d = 'd'"
 	for i := 0; i < b.N; i++ {
 		q, err := Parse(sql)
 		if err != nil {
