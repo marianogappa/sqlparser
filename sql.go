@@ -32,7 +32,8 @@ func ParseMany(sqls []string) ([]query.Query, error) {
 }
 
 func parse(sql string) (query.Query, error) {
-	return (&parser{0, strings.TrimSpace(sql), stepType, query.Query{}, nil, ""}).parse()
+	sql = strings.TrimSpace(sql)
+	return (&parser{0, 0, "", sql, strings.ToUpper(sql), stepType, query.Query{}, nil, ""}).parse()
 }
 
 type step int
@@ -68,7 +69,10 @@ const (
 
 type parser struct {
 	i               int
+	len             int
+	peeked          string
 	sql             string
+	sqlUpper        string
 	step            step
 	query           query.Query
 	err             error
@@ -92,45 +96,43 @@ func (p *parser) doParse() (query.Query, error) {
 		}
 		switch p.step {
 		case stepType:
-			switch strings.ToUpper(p.peek()) {
+			s := p.peek(true)
+			switch s {
 			case "SELECT":
 				p.query.Type = query.Select
-				p.pop()
 				p.step = stepSelectField
 			case "INSERT INTO":
 				p.query.Type = query.Insert
-				p.pop()
 				p.step = stepInsertTable
 			case "UPDATE":
 				p.query.Type = query.Update
 				p.query.Updates = map[string]string{}
-				p.pop()
 				p.step = stepUpdateTable
 			case "DELETE FROM":
 				p.query.Type = query.Delete
-				p.pop()
 				p.step = stepDeleteFromTable
 			default:
 				return p.query, fmt.Errorf("invalid query type")
 			}
+			p.pop()
 		case stepSelectField:
-			identifier := p.peek()
+			identifier := p.peek(false)
 			if !isIdentifierOrAsterisk(identifier) {
 				return p.query, fmt.Errorf("at SELECT: expected field to SELECT")
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
 			p.pop()
-			maybeFrom := strings.ToUpper(p.peek())
+			maybeFrom := p.peek(true)
 			if maybeFrom == "AS" {
 				// alias
 				p.pop()
-				alias := p.peek()
+				alias := p.peek(false)
 				if !isIdentifierOrAsterisk(alias) {
 					return p.query, fmt.Errorf("at SELECT: expected alias (AS) for %s", identifier)
 				}
 				p.query.Aliases = append(p.query.Aliases, alias)
 				p.pop()
-				maybeFrom = p.peek()
+				maybeFrom = p.peek(true)
 			} else {
 				p.query.Aliases = append(p.query.Aliases, "")
 			}
@@ -140,21 +142,21 @@ func (p *parser) doParse() (query.Query, error) {
 			}
 			p.step = stepSelectComma
 		case stepSelectComma:
-			commaRWord := p.peek()
+			commaRWord := p.peek(false)
 			if commaRWord != "," {
 				return p.query, fmt.Errorf("at SELECT: expected comma or FROM")
 			}
 			p.pop()
 			p.step = stepSelectField
 		case stepSelectFrom:
-			fromRWord := p.peek()
-			if strings.ToUpper(fromRWord) != "FROM" {
+			fromRWord := p.peek(true)
+			if fromRWord != "FROM" {
 				return p.query, fmt.Errorf("at SELECT: expected FROM")
 			}
 			p.pop()
 			p.step = stepSelectFromTable
 		case stepSelectFromTable:
-			tableName := p.peek()
+			tableName := p.peek(false)
 			if len(tableName) == 0 {
 				return p.query, fmt.Errorf("at SELECT: expected quoted table name")
 			}
@@ -162,7 +164,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepWhere
 		case stepInsertTable:
-			tableName := p.peek()
+			tableName := p.peek(false)
 			if len(tableName) == 0 {
 				return p.query, fmt.Errorf("at INSERT INTO: expected quoted table name")
 			}
@@ -170,7 +172,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepInsertFieldsOpeningParens
 		case stepDeleteFromTable:
-			tableName := p.peek()
+			tableName := p.peek(false)
 			if len(tableName) == 0 {
 				return p.query, fmt.Errorf("at DELETE FROM: expected quoted table name")
 			}
@@ -178,7 +180,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepWhere
 		case stepUpdateTable:
-			tableName := p.peek()
+			tableName := p.peek(false)
 			if len(tableName) == 0 {
 				return p.query, fmt.Errorf("at UPDATE: expected quoted table name")
 			}
@@ -186,14 +188,14 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepUpdateSet
 		case stepUpdateSet:
-			setRWord := p.peek()
+			setRWord := p.peek(true)
 			if setRWord != "SET" {
 				return p.query, fmt.Errorf("at UPDATE: expected 'SET'")
 			}
 			p.pop()
 			p.step = stepUpdateField
 		case stepUpdateField:
-			identifier := p.peek()
+			identifier := p.peek(false)
 			if !isIdentifier(identifier) {
 				return p.query, fmt.Errorf("at UPDATE: expected at least one field to update")
 			}
@@ -201,42 +203,42 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepUpdateEquals
 		case stepUpdateEquals:
-			equalsRWord := p.peek()
+			equalsRWord := p.peek(false)
 			if equalsRWord != "=" {
 				return p.query, fmt.Errorf("at UPDATE: expected '='")
 			}
 			p.pop()
 			p.step = stepUpdateValue
 		case stepUpdateValue:
-			quotedValue, ln := p.peekQuotedStringWithLength()
-			if ln == 0 {
+			quotedValue := p.peekQuotedString(false)
+			if p.len == 0 {
 				return p.query, fmt.Errorf("at UPDATE: expected quoted value")
 			}
 			p.query.Updates[p.nextUpdateField] = quotedValue
 			p.nextUpdateField = ""
 			p.pop()
-			maybeWhere := p.peek()
-			if strings.ToUpper(maybeWhere) == "WHERE" {
+			maybeWhere := p.peek(true)
+			if maybeWhere == "WHERE" {
 				p.step = stepWhere
 				continue
 			}
 			p.step = stepUpdateComma
 		case stepUpdateComma:
-			commaRWord := p.peek()
+			commaRWord := p.peek(false)
 			if commaRWord != "," {
 				return p.query, fmt.Errorf("at UPDATE: expected ','")
 			}
 			p.pop()
 			p.step = stepUpdateField
 		case stepWhere:
-			whereRWord := p.peek()
-			if strings.ToUpper(whereRWord) != "WHERE" {
+			whereRWord := p.peek(true)
+			if whereRWord != "WHERE" {
 				return p.query, fmt.Errorf("expected WHERE")
 			}
 			p.pop()
 			p.step = stepWhereField
 		case stepWhereField:
-			identifier := p.peek()
+			identifier := p.peek(false)
 			if !isIdentifier(identifier) {
 				return p.query, fmt.Errorf("at WHERE: expected field")
 			}
@@ -244,7 +246,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepWhereOperator
 		case stepWhereOperator:
-			operator := p.peek()
+			operator := p.peek(false)
 			currentCondition := p.query.Conditions[len(p.query.Conditions)-1]
 			switch operator {
 			case "=":
@@ -267,13 +269,13 @@ func (p *parser) doParse() (query.Query, error) {
 			p.step = stepWhereValue
 		case stepWhereValue:
 			currentCondition := p.query.Conditions[len(p.query.Conditions)-1]
-			identifier := p.peek()
+			identifier := p.peek(false)
 			if isIdentifier(identifier) {
 				currentCondition.Operand2 = identifier
 				currentCondition.Operand2IsField = true
 			} else {
-				quotedValue, ln := p.peekQuotedStringWithLength()
-				if ln == 0 {
+				quotedValue := p.peekQuotedString(false)
+				if p.len == 0 {
 					return p.query, fmt.Errorf("at WHERE: expected quoted value")
 				}
 				currentCondition.Operand2 = quotedValue
@@ -283,21 +285,21 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepWhereAnd
 		case stepWhereAnd:
-			andRWord := p.peek()
-			if strings.ToUpper(andRWord) != "AND" {
+			andRWord := p.peek(true)
+			if andRWord != "AND" {
 				return p.query, fmt.Errorf("expected AND")
 			}
 			p.pop()
 			p.step = stepWhereField
 		case stepInsertFieldsOpeningParens:
-			openingParens := p.peek()
+			openingParens := p.peek(false)
 			if len(openingParens) != 1 || openingParens != "(" {
 				return p.query, fmt.Errorf("at INSERT INTO: expected opening parens")
 			}
 			p.pop()
 			p.step = stepInsertFields
 		case stepInsertFields:
-			identifier := p.peek()
+			identifier := p.peek(false)
 			if !isIdentifier(identifier) {
 				return p.query, fmt.Errorf("at INSERT INTO: expected at least one field to insert")
 			}
@@ -305,7 +307,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepInsertFieldsCommaOrClosingParens
 		case stepInsertFieldsCommaOrClosingParens:
-			commaOrClosingParens := p.peek()
+			commaOrClosingParens := p.peek(false)
 			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
 				return p.query, fmt.Errorf("at INSERT INTO: expected comma or closing parens")
 			}
@@ -316,14 +318,14 @@ func (p *parser) doParse() (query.Query, error) {
 			}
 			p.step = stepInsertValuesRWord
 		case stepInsertValuesRWord:
-			valuesRWord := p.peek()
-			if strings.ToUpper(valuesRWord) != "VALUES" {
+			valuesRWord := p.peek(true)
+			if valuesRWord != "VALUES" {
 				return p.query, fmt.Errorf("at INSERT INTO: expected 'VALUES'")
 			}
 			p.pop()
 			p.step = stepInsertValuesOpeningParens
 		case stepInsertValuesOpeningParens:
-			openingParens := p.peek()
+			openingParens := p.peek(false)
 			if openingParens != "(" {
 				return p.query, fmt.Errorf("at INSERT INTO: expected opening parens")
 			}
@@ -331,15 +333,15 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 			p.step = stepInsertValues
 		case stepInsertValues:
-			quotedValue, ln := p.peekQuotedStringWithLength()
-			if ln == 0 {
+			quotedValue := p.peekQuotedString(false)
+			if p.len == 0 {
 				return p.query, fmt.Errorf("at INSERT INTO: expected quoted value")
 			}
 			p.query.Inserts[len(p.query.Inserts)-1] = append(p.query.Inserts[len(p.query.Inserts)-1], quotedValue)
 			p.pop()
 			p.step = stepInsertValuesCommaOrClosingParens
 		case stepInsertValuesCommaOrClosingParens:
-			commaOrClosingParens := p.peek()
+			commaOrClosingParens := p.peek(false)
 			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
 				return p.query, fmt.Errorf("at INSERT INTO: expected comma or closing parens")
 			}
@@ -354,8 +356,8 @@ func (p *parser) doParse() (query.Query, error) {
 			}
 			p.step = stepInsertValuesCommaBeforeOpeningParens
 		case stepInsertValuesCommaBeforeOpeningParens:
-			commaRWord := p.peek()
-			if strings.ToUpper(commaRWord) != "," {
+			commaRWord := p.peek(false)
+			if commaRWord != "," {
 				return p.query, fmt.Errorf("at INSERT INTO: expected comma")
 			}
 			p.pop()
@@ -364,16 +366,33 @@ func (p *parser) doParse() (query.Query, error) {
 	}
 }
 
-func (p *parser) peek() string {
-	peeked, _ := p.peekWithLength()
-	return peeked
+func (p *parser) peek(upper bool) string {
+	p.peeked, p.len = p.peekWithLength(upper)
+	return p.peeked
+}
+
+func (p *parser) peekQuotedString(upper bool) string {
+	p.peeked, p.len = p.peekQuotedStringWithLength(upper)
+	return p.peeked
+}
+
+func (p *parser) peekIdentifier(upper bool) string {
+	p.peeked, p.len = p.peekQuotedStringWithLength(upper)
+	return p.peeked
 }
 
 func (p *parser) pop() string {
-	peeked, len := p.peekWithLength()
-	p.i += len
+	peeked := p.peeked
+	p.peeked = ""
+	p.i += p.len
+	p.len = 0
 	p.popWhitespace()
 	return peeked
+}
+
+func (p *parser) popWithLength(len int) {
+	p.i += len
+	p.popWhitespace()
 }
 
 func (p *parser) popWhitespace() {
@@ -386,35 +405,42 @@ var reservedWords = []string{
 	"WHERE", "FROM", "SET",
 }
 
-func (p *parser) peekWithLength() (string, int) {
+func (p *parser) peekWithLength(upper bool) (string, int) {
 	if p.i >= len(p.sql) {
 		return "", 0
 	}
 	for _, rWord := range reservedWords {
-		token := strings.ToUpper(p.sql[p.i:min(len(p.sql), p.i+len(rWord))])
+		token := p.sqlUpper[p.i:min(len(p.sqlUpper), p.i+len(rWord))]
 		if token == rWord {
+			if !upper {
+				token = p.sql[p.i:min(len(p.sql), p.i+len(rWord))]
+			}
+
 			return token, len(token)
 		}
 	}
 	if p.sql[p.i] == '\'' { // Quoted string
-		return p.peekQuotedStringWithLength()
+		return p.peekQuotedStringWithLength(upper)
 	}
-	return p.peekIdentifierWithLength()
+	return p.peekIdentifierWithLength(upper)
 }
 
-func (p *parser) peekQuotedStringWithLength() (string, int) {
+func (p *parser) peekQuotedStringWithLength(upper bool) (string, int) {
 	if len(p.sql) < p.i || p.sql[p.i] != '\'' {
 		return "", 0
 	}
 	for i := p.i + 1; i < len(p.sql); i++ {
 		if p.sql[i] == '\'' && p.sql[i-1] != '\\' {
+			if upper {
+				return p.sqlUpper[p.i+1 : i], len(p.sqlUpper[p.i+1:i]) + 2 // +2 for the two quotes
+			}
 			return p.sql[p.i+1 : i], len(p.sql[p.i+1:i]) + 2 // +2 for the two quotes
 		}
 	}
 	return "", 0
 }
 
-func (p *parser) peekIdentifierWithLength() (string, int) {
+func (p *parser) peekIdentifierWithLength(upper bool) (string, int) {
 	for i := p.i; i < len(p.sql); i++ {
 		isIdentifierSymbol := (p.sql[i] >= 'a' && p.sql[i] <= 'z') ||
 			(p.sql[i] >= 'A' && p.sql[i] <= 'Z') ||
@@ -428,8 +454,14 @@ func (p *parser) peekIdentifierWithLength() (string, int) {
 					i += end + 2
 				}
 			}
+			if upper {
+				return p.sqlUpper[p.i:i], len(p.sqlUpper[p.i:i])
+			}
 			return p.sql[p.i:i], len(p.sql[p.i:i])
 		}
+	}
+	if upper {
+		return p.sqlUpper[p.i:], len(p.sqlUpper[p.i:])
 	}
 	return p.sql[p.i:], len(p.sql[p.i:])
 }
@@ -486,8 +518,9 @@ func (p *parser) logError() {
 var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
 
 func isIdentifier(s string) bool {
+	u := strings.ToUpper(s)
 	for _, rw := range reservedWords {
-		if strings.ToUpper(s) == rw {
+		if u == rw {
 			return false
 		}
 	}
