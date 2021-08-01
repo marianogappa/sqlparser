@@ -436,7 +436,7 @@ func (p *parser) validate() error {
 	if p.query.Type == query.UnknownType {
 		return fmt.Errorf("query type cannot be empty")
 	}
-	if p.query.TableName == "" {
+	if (p.query.Type != query.Select || len(p.query.Fields) == 0) && p.query.TableName == "" {
 		return fmt.Errorf("table name cannot be empty")
 	}
 	if len(p.query.Conditions) == 0 && (p.query.Type == query.Update || p.query.Type == query.Delete) {

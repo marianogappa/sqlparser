@@ -28,54 +28,54 @@ type output struct {
 
 func TestSQL(t *testing.T) {
 	ts := []testCase{
-		// {
-		// 	Name:     "empty query fails",
-		// 	SQL:      "",
-		// 	Expected: query.Query{},
-		// 	Err:      fmt.Errorf("query type cannot be empty"),
-		// },
-		// {
-		// 	Name:     "SELECT without FROM fails",
-		// 	SQL:      "SELECT",
-		// 	Expected: query.Query{Type: query.Select},
-		// 	Err:      fmt.Errorf("table name cannot be empty"),
-		// },
-		// {
-		// 	Name:     "SELECT without fields fails",
-		// 	SQL:      "SELECT FROM 'a'",
-		// 	Expected: query.Query{Type: query.Select},
-		// 	Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
-		// },
-		// {
-		// 	Name:     "SELECT with comma and empty field fails",
-		// 	SQL:      "SELECT b, FROM 'a'",
-		// 	Expected: query.Query{Type: query.Select},
-		// 	Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
-		// {
-		// 	Name:     "SELECT with incomplete alias fails",
-		// 	SQL:      "SELECT a AS",
-		// 	Expected: query.Query{Type: query.Select},
-		// 	Err:      fmt.Errorf("at SELECT: expected alias (AS) for a"),
-		// },
-		// },
-		// {
-		// 	Name:     "SELECT version() as version",
-		// 	SQL:      "SELECT version() as version",
-		// 	Expected: query.Query{Type: query.Select, Fields: []string{"version() as version"}},
-		// 	Err:      nil,
-		// },
-		// {
-		// 	Name:     "SELECT works",
-		// 	SQL:      "SELECT a FROM 'b'",
-		// 	Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
-		// 	Err:      nil,
-		// },
-		// {
-		// 	Name:     "SELECT with alias works",
-		// 	SQL:      "SELECT a AS text FROM 'b'",
-		// 	Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{"text"}},
-		// 	Err:      nil,
-		// },
+		{
+			Name:     "empty query fails",
+			SQL:      "",
+			Expected: query.Query{},
+			Err:      fmt.Errorf("query type cannot be empty"),
+		},
+		{
+			Name:     "SELECT without FROM fails",
+			SQL:      "SELECT",
+			Expected: query.Query{Type: query.Select},
+			Err:      fmt.Errorf("table name cannot be empty"),
+		},
+		{
+			Name:     "SELECT without fields fails",
+			SQL:      "SELECT FROM 'a'",
+			Expected: query.Query{Type: query.Select},
+			Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
+		},
+		{
+			Name:     "SELECT with comma and empty field fails",
+			SQL:      "SELECT b, FROM 'a'",
+			Expected: query.Query{Type: query.Select},
+			Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
+		},
+		{
+			Name:     "SELECT with incomplete alias fails",
+			SQL:      "SELECT a AS",
+			Expected: query.Query{Type: query.Select},
+			Err:      fmt.Errorf("at SELECT: expected alias (AS) for a"),
+		},
+		{
+			Name:     "SELECT version() as version",
+			SQL:      "SELECT version() as version",
+			Expected: query.Query{Type: query.Select, Fields: []string{"version()"}, Aliases: []string{"version"}},
+			Err:      nil,
+		},
+		{
+			Name:     "SELECT works",
+			SQL:      "SELECT a FROM 'b'",
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{""}},
+			Err:      nil,
+		},
+		{
+			Name:     "SELECT with alias works",
+			SQL:      "SELECT a AS text FROM 'b'",
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{"text"}},
+			Err:      nil,
+		},
 		{
 			Name:     "SELECT with alias works",
 			SQL:      "SELECT version(a) AS version FROM 'b'",

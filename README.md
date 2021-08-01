@@ -22,6 +22,21 @@ func main() {
 ```
 
 
+### Example: SELECT version() as version
+
+```
+query, err := sqlparser.Parse(`SELECT version() as version`)
+
+query.Query {
+	Type: Select
+	TableName: 
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [version()]
+}
+```
+
 ### Example: SELECT works
 
 ```
@@ -34,6 +49,36 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a]
+}
+```
+
+### Example: SELECT with alias works
+
+```
+query, err := sqlparser.Parse(`SELECT a AS text FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [a]
+}
+```
+
+### Example: SELECT with alias works
+
+```
+query, err := sqlparser.Parse(`SELECT version(a) AS version FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [version(a)]
 }
 ```
 
@@ -474,6 +519,14 @@ at SELECT: expected field to SELECT
 query, err := sqlparser.Parse(`SELECT b, FROM 'a'`)
 
 at SELECT: expected field to SELECT
+```
+
+### Example: SELECT with incomplete alias fails
+
+```
+query, err := sqlparser.Parse(`SELECT a AS`)
+
+at SELECT: expected alias (AS) for a
 ```
 
 ### Example: SELECT with empty WHERE fails
