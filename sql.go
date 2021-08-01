@@ -9,12 +9,13 @@ import (
 )
 
 // Parse takes a string representing a SQL query and parses it into a query.Query struct. It may fail.
-func Parse(sqls string) (query.Query, error) {
-	qs, err := ParseMany([]string{sqls})
-	if len(qs) == 0 {
-		return query.Query{}, err
-	}
-	return qs[0], err
+func Parse(sql string) (query.Query, error) {
+	sql = strings.TrimSpace(sql)
+	return (&parser{
+		sql:      sql,
+		sqlUpper: strings.ToUpper(sql),
+		step:     stepType,
+	}).parse()
 }
 
 // ParseMany takes a string slice representing many SQL queries and parses them into a query.Query struct slice.
@@ -22,18 +23,13 @@ func Parse(sqls string) (query.Query, error) {
 func ParseMany(sqls []string) ([]query.Query, error) {
 	qs := []query.Query{}
 	for _, sql := range sqls {
-		q, err := parse(sql)
+		q, err := Parse(sql)
 		if err != nil {
 			return qs, err
 		}
 		qs = append(qs, q)
 	}
 	return qs, nil
-}
-
-func parse(sql string) (query.Query, error) {
-	sql = strings.TrimSpace(sql)
-	return (&parser{0, 0, "", sql, strings.ToUpper(sql), stepType, query.Query{}, nil, ""}).parse()
 }
 
 type step int
