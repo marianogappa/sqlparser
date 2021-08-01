@@ -474,6 +474,26 @@ func TestSQL(t *testing.T) {
 	createReadme(output)
 }
 
+func BenchmarkSQLSelect(b *testing.B) {
+	sql := "SELECT a AS text FROM 'b'"
+	for i := 0; i < b.N; i++ {
+		q, err := Parse(sql)
+		if err != nil {
+			b.Errorf("Error should have been %v: %v", err, q)
+		}
+	}
+}
+
+func BenchmarkSQLInsert(b *testing.B) {
+	sql := "INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )"
+	for i := 0; i < b.N; i++ {
+		q, err := Parse(sql)
+		if err != nil {
+			b.Errorf("Error should have been %v: %v", err, q)
+		}
+	}
+}
+
 func createReadme(out output) {
 	content, err := ioutil.ReadFile("README.template")
 	if err != nil {
