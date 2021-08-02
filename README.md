@@ -529,7 +529,7 @@ at SELECT: expected field to SELECT
 ```
 query, err := sqlparser.Parse(`SELECT a AS`)
 
-at SELECT: expected alias (AS) for a
+at AS: expected alias for a
 ```
 
 ### Example: SELECT with empty WHERE fails

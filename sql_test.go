@@ -58,7 +58,7 @@ func TestSQL(t *testing.T) {
 			Name:     "SELECT with incomplete alias fails",
 			SQL:      "SELECT a AS",
 			Expected: query.Query{Type: query.Select},
-			Err:      fmt.Errorf("at SELECT: expected alias (AS) for a"),
+			Err:      fmt.Errorf("at AS: expected alias for a"),
 		},
 		{
 			Name:     "SELECT version() as version",
@@ -421,10 +421,15 @@ func TestSQL(t *testing.T) {
 			Err: nil,
 		},
 		{
-			Name:     "INSERT * fails",
-			SQL:      "INSERT INTO 'a' (*) VALUES ('1')",
-			Expected: query.Query{},
-			Err:      fmt.Errorf("at INSERT INTO: expected at least one field to insert"),
+			Name: "INSERT * fails",
+			SQL:  "INSERT INTO 'a' (*) VALUES ('1')",
+			Expected: query.Query{
+				Type:      query.Insert,
+				TableName: "a",
+				Fields:    []string{"*"},
+				Inserts:   [][]string{{"1"}},
+			},
+			Err: fmt.Errorf("at INSERT INTO: expected at least one field to insert"),
 		},
 		{
 			Name: "INSERT with multiple fields works",
@@ -513,9 +518,64 @@ func TestWhere(t *testing.T) {
 			Err:   nil,
 			Ended: true,
 		},
+		{
+			Name: "WHERE a = 1",
+			SQL:  "a>=1",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Gte, Operand2: "1", Operand2Type: query.OpNumber},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+		{
+			Name: "WHERE a = 1.24",
+			SQL:  "a>= 1.24",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Gte, Operand2: "1.24", Operand2Type: query.OpNumber},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+		{
+			Name: "WHERE a = -1.21",
+			SQL:  "a>=-1.21",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Gte, Operand2: "-1.21", Operand2Type: query.OpNumber},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+		{
+			Name: "WHERE a = 1 AND b > a1",
+			SQL:  "a = 1 AND b > a1",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpNumber},
+					{Operand1: "b", Operand1Type: query.OpField, Operator: query.Gt, Operand2: "a1", Operand2Type: query.OpField},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+		{
+			Name: "ERROR (a1) WHERE a = 1a",
+			SQL:  "a = 1a",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "", Operand2Type: query.OpUnknown},
+				},
+			},
+			Err:   fmt.Errorf("at WHERE: expected quoted value"),
+			Ended: false,
+		},
 	}
 
-	output := output{Types: query.TypeString, Operators: query.OperatorString}
 	for _, tc := range ts {
 		t.Run(tc.Name, func(t *testing.T) {
 			var p parser
@@ -544,11 +604,6 @@ func TestWhere(t *testing.T) {
 				require.Equal(t, tc.Err.Error(), err.Error(), "Unexpected error")
 			}
 			require.Equal(t, tc.Expected, p.query, "Query didn't match expectation")
-			if tc.Err != nil {
-				output.ErrorExamples = append(output.ErrorExamples, tc)
-			} else {
-				output.NoErrorExamples = append(output.NoErrorExamples, tc)
-			}
 		})
 	}
 }

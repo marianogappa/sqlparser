@@ -100,6 +100,7 @@ type parser struct {
 	i               int
 	len             int
 	peeked          string
+	peekQuoted      bool
 	sql             string
 	sqlUpper        string
 	step            step
@@ -129,14 +130,24 @@ func (p *parser) doParse() (query.Query, error) {
 			case "SELECT":
 				p.query.Type = query.Select
 				p.step = stepSelectField
-			case "INSERT INTO":
+			case "INSERT":
+				p.pop()
+				s = p.peek(true)
+				if s != "INTO" {
+					return p.query, newErrorf(p.i, "at INSERT: expected INTO, got %s", s)
+				}
 				p.query.Type = query.Insert
 				p.step = stepInsertTable
 			case "UPDATE":
 				p.query.Type = query.Update
 				p.query.Updates = map[string]string{}
 				p.step = stepUpdateTable
-			case "DELETE FROM":
+			case "DELETE":
+				p.pop()
+				s = p.peek(true)
+				if s != "FROM" {
+					return p.query, newErrorf(p.i, "at DELETE: expected FROM, got %s", s)
+				}
 				p.query.Type = query.Delete
 				p.step = stepDeleteFromTable
 			default:
@@ -145,7 +156,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.pop()
 		case stepSelectField:
 			identifier := p.peek(false)
-			if !isIdentifierOrAsterisk(identifier) {
+			if isId, _ := isIdentifierOrAsterisk(identifier); !isId {
 				return p.query, newError(p.i, "at SELECT: expected field to SELECT")
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
@@ -155,8 +166,8 @@ func (p *parser) doParse() (query.Query, error) {
 				// alias
 				p.pop()
 				alias := p.peek(false)
-				if !isIdentifierOrAsterisk(alias) {
-					return p.query, newErrorf(p.i, "at SELECT: expected alias (AS) for %s", identifier)
+				if isId, _ := isIdentifierOrAsterisk(alias); !isId {
+					return p.query, newErrorf(p.i, "at AS: expected alias for %s", identifier)
 				}
 				p.query.Aliases = append(p.query.Aliases, alias)
 				p.pop()
@@ -224,7 +235,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.step = stepUpdateField
 		case stepUpdateField:
 			identifier := p.peek(false)
-			if !isIdentifier(identifier) {
+			if isId, _ := isIdentifier(identifier); !isId {
 				return p.query, newError(p.i, "at UPDATE: expected at least one field to update")
 			}
 			p.nextUpdateField = identifier
@@ -277,7 +288,7 @@ func (p *parser) doParse() (query.Query, error) {
 			p.step = stepInsertFields
 		case stepInsertFields:
 			identifier := p.peek(false)
-			if !isIdentifier(identifier) {
+			if isId, _ := isIdentifier(identifier); !isId {
 				return p.query, newError(p.i, "at INSERT INTO: expected at least one field to insert")
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
@@ -356,34 +367,39 @@ func (p *parser) parseWhere() (bool, error) {
 		switch p.step {
 		case stepWhereField:
 			identifier := p.peek(false)
-			if len(identifier) == 0 {
-				return false, newError(p.i, "at WHERE: empty WHERE clause")
-			} else if !isIdentifier(identifier) {
-				if len(p.query.Conditions) == 0 {
-					return true, newError(p.i, "at WHERE: expected field")
-				}
-				// TODO detect closed
+			if p.peekQuoted {
+				p.query.Conditions = append(p.query.Conditions, query.Condition{Operand1: identifier, Operand1Type: query.OpQuoted})
+			} else {
+				if len(identifier) == 0 {
+					return false, newError(p.i, "at WHERE: empty WHERE clause")
+				} else if isId, _ := isIdentifier(identifier); !isId {
+					if len(p.query.Conditions) == 0 {
+						return true, newError(p.i, "at WHERE: expected field")
+					}
+					// TODO detect closed
 
-				return true, nil
+					return true, nil
+				}
+				p.query.Conditions = append(p.query.Conditions, query.Condition{Operand1: identifier, Operand1Type: query.OpField})
 			}
-			p.query.Conditions = append(p.query.Conditions, query.Condition{Operand1: identifier, Operand1Type: query.OpField})
 			p.pop()
 			p.step = stepWhereOperator
 		case stepWhereOperator:
-			operator := p.peek(false)
+			operatorStr := p.peek(false)
 			currentCondition := p.query.Conditions[len(p.query.Conditions)-1]
+			operator, _ := reservedWords[operatorStr]
 			switch operator {
-			case "=":
+			case rEQ:
 				currentCondition.Operator = query.Eq
-			case ">":
+			case rGT:
 				currentCondition.Operator = query.Gt
-			case ">=":
+			case rGTE:
 				currentCondition.Operator = query.Gte
-			case "<":
+			case rLT:
 				currentCondition.Operator = query.Lt
-			case "<=":
+			case rLTE:
 				currentCondition.Operator = query.Lte
-			case "!=":
+			case rNE:
 				currentCondition.Operator = query.Ne
 			default:
 				return false, newError(p.i, "at WHERE: unknown operator")
@@ -394,16 +410,19 @@ func (p *parser) parseWhere() (bool, error) {
 		case stepWhereValue:
 			currentCondition := p.query.Conditions[len(p.query.Conditions)-1]
 			identifier := p.peek(false)
-			if isIdentifier(identifier) {
+			if p.peekQuoted {
 				currentCondition.Operand2 = identifier
-				currentCondition.Operand2Type = query.OpField
+				currentCondition.Operand2Type = query.OpQuoted
 			} else {
-				quotedValue := p.peekQuotedString(false)
-				if p.len == 0 {
+				if isIdentifier, isNumber := isIdentifier(identifier); isIdentifier {
+					currentCondition.Operand2 = identifier
+					currentCondition.Operand2Type = query.OpField
+				} else if isNumber {
+					currentCondition.Operand2 = identifier
+					currentCondition.Operand2Type = query.OpNumber
+				} else {
 					return false, newError(p.i, "at WHERE: expected quoted value")
 				}
-				currentCondition.Operand2 = quotedValue
-				currentCondition.Operand2Type = query.OpQuoted
 			}
 			p.query.Conditions[len(p.query.Conditions)-1] = currentCondition
 			p.pop()
@@ -451,6 +470,7 @@ func (p *parser) pop() string {
 	p.peeked = ""
 	p.i += p.len
 	p.len = 0
+	p.peekQuoted = false
 	p.popWhitespace()
 	return peeked
 }
@@ -465,35 +485,96 @@ func (p *parser) popWhitespace() {
 	}
 }
 
-var reservedWords = []string{
-	"(", ")", ">=", "<=", "!=", ",", "=", ">", "<", "AS", "SELECT", "INSERT INTO", "VALUES", "UPDATE", "DELETE FROM",
-	"WHERE", "FROM", "SET",
-}
+type rWord int
+
+const (
+	rUnknown rWord = iota
+	// reserwed words
+	rLeftBracket  // "(""
+	rRightBracket // ")"
+	rGT           // ">"
+	rGTE          // ">="
+	rLTE          // "<="
+	rLT           // "<"
+	rEQ           // "="
+	rNE           // "!="
+	rCOMMA        // ","
+	rSEMI         //";"
+	rEX           // "!"
+	rAS           // "AS"
+	rSELECT       // "SELECT"
+	rINSERT       // "INSERT"
+	rINTO         //"INTO"
+	rVALUES       // "VALUES"
+	rUPDATE       // "UPDATE"
+	rDELETE       // "DELETE"
+	rWHERE        // "WHERE"
+	rFROM         // "FROM"
+	rSET          // "SET"
+	r
+)
+
+var (
+	reservedSymbols = map[byte]rWord{
+		'(': rLeftBracket,
+		')': rRightBracket,
+		'>': rGT,
+		'<': rLT,
+		'=': rEQ,
+		'!': rEX,
+		',': rCOMMA,
+		';': rSEMI,
+	}
+
+	reservedWords = map[string]rWord{
+		"(":      rLeftBracket,
+		")":      rRightBracket,
+		">":      rGT,
+		">=":     rGTE,
+		"<":      rLT,
+		"<=":     rLTE,
+		"=":      rEQ,
+		"!=":     rNE,
+		",":      rCOMMA,
+		";":      rSEMI,
+		"AS":     rAS,
+		"SELECT": rSELECT,
+		"INSERT": rINSERT,
+		"INTO":   rINTO,
+		"VALUES": rVALUES,
+		"UPDATE": rUPDATE,
+		"DELETE": rDELETE,
+		"FROM":   rFROM,
+		"WHERE":  rWHERE,
+		"SET":    rSET,
+	}
+)
 
 func (p *parser) peekWithLength(upper bool) (string, int) {
 	if p.i >= len(p.sql) {
 		return "", 0
 	}
-	for _, rWord := range reservedWords {
-		token := p.sqlUpper[p.i:min(len(p.sqlUpper), p.i+len(rWord))]
-		if token == rWord {
-			if !upper {
-				token = p.sql[p.i:min(len(p.sql), p.i+len(rWord))]
-			}
 
-			return token, len(token)
-		}
-	}
 	if p.sql[p.i] == '\'' { // Quoted string
 		return p.peekQuotedStringWithLength(upper)
 	}
+
+	// for _, rWord := range reservedWords {
+	// 	token := p.sqlUpper[p.i:min(len(p.sqlUpper), p.i+len(rWord))]
+	// 	if token == rWord {
+	// 		if !upper {
+	// 			token = p.sql[p.i:min(len(p.sql), p.i+len(rWord))]
+	// 		}
+
+	// 		return token, len(token)
+	// 	}
+	// }
+
 	return p.peekIdentifierWithLength(upper)
 }
 
 func (p *parser) peekQuotedStringWithLength(upper bool) (string, int) {
-	if len(p.sql) < p.i || p.sql[p.i] != '\'' {
-		return "", 0
-	}
+	p.peekQuoted = true
 	for i := p.i + 1; i < len(p.sql); i++ {
 		if p.sql[i] == '\'' && p.sql[i-1] != '\\' {
 			if upper {
@@ -506,12 +587,30 @@ func (p *parser) peekQuotedStringWithLength(upper bool) (string, int) {
 }
 
 func (p *parser) peekIdentifierWithLength(upper bool) (string, int) {
-	for i := p.i; i < len(p.sql); i++ {
+	i := p.i
+	if _, ok := reservedSymbols[p.sqlUpper[i]]; ok {
+		if p.sql[i] == '(' || p.sql[i] == ')' {
+			i++
+		} else {
+			for i = p.i + 1; i < len(p.sql); i++ {
+				if _, ok := reservedSymbols[p.sqlUpper[i]]; !ok {
+					return p.sql[p.i:i], len(p.sql[p.i:i])
+				} else if p.sql[i] == '(' || p.sql[i] == ')' {
+					break
+				}
+			}
+		}
+		return p.sql[p.i:i], len(p.sql[p.i:i])
+	}
+
+	for ; i < len(p.sql); i++ {
 		isIdentifierSymbol := (p.sql[i] >= 'a' && p.sql[i] <= 'z') ||
 			(p.sql[i] >= 'A' && p.sql[i] <= 'Z') ||
 			(p.sql[i] >= '0' && p.sql[i] <= '9') ||
 			p.sql[i] == '*' ||
-			p.sql[i] == '_'
+			p.sql[i] == '_' ||
+			p.sql[i] == '-' ||
+			p.sql[i] == '.'
 		if !isIdentifierSymbol {
 			if p.sql[i] == '(' {
 				// detect function
@@ -571,38 +670,49 @@ func (p *parser) validate() error {
 	return nil
 }
 
-//var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
-
-func isIdentifier(s string) bool {
+func isIdentifier(s string) (bool, bool) {
 	if len(s) == 0 {
-		return false
+		return false, false
 	}
 	u := strings.ToUpper(s)
-	for _, rw := range reservedWords {
-		if u == rw {
-			return false
-		}
+
+	if _, ok := reservedWords[u]; ok {
+		return false, false
 	}
-	//return regexIdentifier.MatchString(s)
-	if (s[0] >= 'a' && s[0] <= 'z') ||
+
+	if s[0] == '-' || (s[0] >= '0' && s[0] <= '9') {
+		for i := 1; i < len(s); i++ {
+			allowedSymbol := (s[i] >= '0' && s[i] <= '9') || s[i] == '.'
+			if !allowedSymbol {
+				return false, false
+			}
+		}
+		return false, true
+	} else if (s[0] >= 'a' && s[0] <= 'z') ||
 		(s[0] >= 'A' && s[0] <= 'Z') ||
 		s[0] == '_' {
-		// for i := 1; i < len(s); i++ {
-		// 	isIdentifierSymbol := (s[i] >= 'a' && s[i] <= 'z') ||
-		// 		(s[i] >= 'A' && s[i] <= 'Z') ||
-		// 		(s[i] >= '0' && s[i] <= '9') ||
-		// 		s[i] == '_'
-		// 	if !isIdentifierSymbol {
-		// 		return false
-		// 	}
-		// }
-		return true
+		for i := 1; i < len(s); i++ {
+			isIdentifierSymbol := (s[i] >= 'a' && s[i] <= 'z') ||
+				(s[i] >= 'A' && s[i] <= 'Z') ||
+				(s[i] >= '0' && s[i] <= '9') ||
+				s[i] == '_'
+			if !isIdentifierSymbol {
+				if s[i] == '(' && s[len(s)-1] == ')' {
+					return true, false
+				}
+				return false, false
+			}
+		}
+		return true, false
 	}
-	return false
+	return false, false
 }
 
-func isIdentifierOrAsterisk(s string) bool {
-	return s == "*" || isIdentifier(s)
+func isIdentifierOrAsterisk(s string) (bool, bool) {
+	if s == "*" {
+		return true, false
+	}
+	return isIdentifier(s)
 }
 
 func min(a, b int) int {

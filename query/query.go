@@ -73,7 +73,7 @@ const (
 	OpUnknown OperandType = iota
 	OpField
 	OpQuoted
-	OpUnquoted
+	OpNumber
 )
 
 // Condition is a single boolean condition in a WHERE clause
