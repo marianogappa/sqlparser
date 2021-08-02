@@ -43,6 +43,7 @@ query.Query {
 	Updates: {{.Expected.Updates}}
 	Inserts: {{.Expected.Inserts}}
 	Fields: {{.Expected.Fields}}
+	Aliases: {{.Expected.Aliases}}
 }
 ```
 {{end}}

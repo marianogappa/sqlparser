@@ -34,6 +34,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a]
+	Aliases: map[]
 }
 ```
 
@@ -49,6 +50,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a]
+	Aliases: map[]
 }
 ```
 
@@ -64,6 +66,23 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
+}
+```
+
+### Example: SELECT with alias works
+
+```
+query, err := sqlparser.Parse(`SELECT a as z, b as y, c FROM 'b'`)
+
+query.Query {
+	Type: Select
+	TableName: b
+	Conditions: []
+	Updates: map[]
+	Inserts: []
+	Fields: [a b c]
+	Aliases: map[a:z b:y]
 }
 ```
 
@@ -86,6 +105,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -108,6 +128,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -130,6 +151,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -152,6 +174,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -174,6 +197,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -196,6 +220,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -218,6 +243,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -233,6 +259,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [*]
+	Aliases: map[]
 }
 ```
 
@@ -248,6 +275,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a *]
+	Aliases: map[]
 }
 ```
 
@@ -277,6 +305,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: [a c d]
+	Aliases: map[]
 }
 ```
 
@@ -299,6 +328,7 @@ query.Query {
 	Updates: map[b:hello]
 	Inserts: []
 	Fields: []
+	Aliases: map[]
 }
 ```
 
@@ -321,6 +351,7 @@ query.Query {
 	Updates: map[b:hello\'world]
 	Inserts: []
 	Fields: []
+	Aliases: map[]
 }
 ```
 
@@ -343,6 +374,7 @@ query.Query {
 	Updates: map[b:hello c:bye]
 	Inserts: []
 	Fields: []
+	Aliases: map[]
 }
 ```
 
@@ -372,6 +404,7 @@ query.Query {
 	Updates: map[b:hello c:bye]
 	Inserts: []
 	Fields: []
+	Aliases: map[]
 }
 ```
 
@@ -394,6 +427,7 @@ query.Query {
 	Updates: map[]
 	Inserts: []
 	Fields: []
+	Aliases: map[]
 }
 ```
 
@@ -409,6 +443,7 @@ query.Query {
 	Updates: map[]
 	Inserts: [[1]]
 	Fields: [b]
+	Aliases: map[]
 }
 ```
 
@@ -424,6 +459,7 @@ query.Query {
 	Updates: map[]
 	Inserts: [[1 2 3]]
 	Fields: [b c d]
+	Aliases: map[]
 }
 ```
 
@@ -439,6 +475,7 @@ query.Query {
 	Updates: map[]
 	Inserts: [[1 2 3] [4 5 6]]
 	Fields: [b c d]
+	Aliases: map[]
 }
 ```
 
