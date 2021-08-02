@@ -364,6 +364,14 @@ func (p *parser) doParse() (query.Query, error) {
 	}
 }
 
+func (p *parser) peekCurrent(upper bool) string {
+	if upper {
+		return p.sqlUpper[p.i : p.i+p.len]
+	} else {
+		return p.sql[p.i : p.i+p.len]
+	}
+}
+
 func (p *parser) peek(upper bool) string {
 	p.peeked, p.len = p.peekWithLength(upper)
 	return p.peeked
@@ -513,15 +521,15 @@ func (p *parser) logError() {
 	fmt.Println(p.err)
 }
 
-func (p *parser) FormatError() (error, [3]string) {
+func (p *parser) FormatError() ([3]string, error) {
 	if p.err == nil {
-		return nil, p.errArr
+		return p.errArr, nil
 	}
 	p.errArr[0] = p.sql
 	p.errArr[1] = strings.Repeat(" ", p.i) + "^"
 	p.errArr[1] = p.err.Error()
 
-	return p.err, p.errArr
+	return p.errArr, p.err
 }
 
 //var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")
