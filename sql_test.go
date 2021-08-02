@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -17,6 +18,7 @@ type testCase struct {
 	SQL      string
 	Expected query.Query
 	Err      error
+	Ended    bool
 }
 
 type output struct {
@@ -114,7 +116,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -127,7 +129,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Lt, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Lt, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -140,7 +142,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Lte, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Lte, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -153,7 +155,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Gt, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Gt, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -166,7 +168,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Gte, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Gte, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -179,7 +181,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Ne, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -192,7 +194,7 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "b", Operand2IsField: true},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Ne, Operand2: "b", Operand2Type: query.OpField},
 				},
 			},
 			Err: nil,
@@ -228,8 +230,8 @@ func TestSQL(t *testing.T) {
 				TableName: "b",
 				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
-					{Operand1: "b", Operand1IsField: true, Operator: query.Eq, Operand2: "2", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Ne, Operand2: "1", Operand2Type: query.OpQuoted},
+					{Operand1: "b", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "2", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -284,7 +286,7 @@ func TestSQL(t *testing.T) {
 				TableName: "a",
 				Updates:   map[string]string{"b": "hello"},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -297,7 +299,7 @@ func TestSQL(t *testing.T) {
 				TableName: "a",
 				Updates:   map[string]string{"b": "hello\\'world"},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -310,7 +312,7 @@ func TestSQL(t *testing.T) {
 				TableName: "a",
 				Updates:   map[string]string{"b": "hello", "c": "bye"},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -323,8 +325,8 @@ func TestSQL(t *testing.T) {
 				TableName: "a",
 				Updates:   map[string]string{"b": "hello", "c": "bye"},
 				Conditions: []query.Condition{
-					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
-					{Operand1: "b", Operand1IsField: true, Operator: query.Eq, Operand2: "789", Operand2IsField: false},
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpQuoted},
+					{Operand1: "b", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "789", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -360,7 +362,7 @@ func TestSQL(t *testing.T) {
 				Type:      query.Delete,
 				TableName: "a",
 				Conditions: []query.Condition{
-					{Operand1: "b", Operand1IsField: true, Operator: query.Eq, Operand2: "1", Operand2IsField: false},
+					{Operand1: "b", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "1", Operand2Type: query.OpQuoted},
 				},
 			},
 			Err: nil,
@@ -451,7 +453,13 @@ func TestSQL(t *testing.T) {
 	output := output{Types: query.TypeString, Operators: query.OperatorString}
 	for _, tc := range ts {
 		t.Run(tc.Name, func(t *testing.T) {
-			actual, err := ParseMany([]string{tc.SQL}, true)
+			actual, err := ParseMany([]string{tc.SQL})
+			if err != nil {
+				if errPos, ok := err.(*ErrorWithPos); ok {
+					fmt.Fprintln(os.Stderr, "")
+					errPos.PrintPosError(tc.SQL, os.Stderr)
+				}
+			}
 			if tc.Err != nil && err == nil {
 				t.Errorf("Error should have been %v", tc.Err)
 			}
@@ -459,7 +467,7 @@ func TestSQL(t *testing.T) {
 				t.Errorf("Error should have been nil but was %v", err)
 			}
 			if tc.Err != nil && err != nil {
-				require.Equal(t, tc.Err, err, "Unexpected error")
+				require.Equal(t, tc.Err.Error(), err.Error(), "Unexpected error")
 			}
 			if len(actual) > 0 {
 				require.Equal(t, tc.Expected, actual[0], "Query didn't match expectation")
@@ -474,10 +482,81 @@ func TestSQL(t *testing.T) {
 	createReadme(output)
 }
 
+func TestWhere(t *testing.T) {
+	ts := []testCase{
+		{
+			Name:     "empty query fails",
+			SQL:      "",
+			Expected: query.Query{},
+			Err:      fmt.Errorf("at WHERE: empty WHERE clause"),
+			Ended:    true,
+		},
+		{
+			Name: "WHERE a",
+			SQL:  "a ",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.UnknownOperator, Operand2: "", Operand2Type: query.OpUnknown},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+		{
+			Name: "WHERE a = ''",
+			SQL:  "a = ''",
+			Expected: query.Query{
+				Conditions: []query.Condition{
+					{Operand1: "a", Operand1Type: query.OpField, Operator: query.Eq, Operand2: "", Operand2Type: query.OpQuoted},
+				},
+			},
+			Err:   nil,
+			Ended: true,
+		},
+	}
+
+	output := output{Types: query.TypeString, Operators: query.OperatorString}
+	for _, tc := range ts {
+		t.Run(tc.Name, func(t *testing.T) {
+			var p parser
+			// init parser internals
+			p.step = stepWhereField
+			p.sql = tc.SQL
+			p.sqlUpper = strings.ToUpper(tc.SQL)
+
+			ended, err := p.parseWhere()
+			if err != nil {
+				if errPos, ok := err.(*ErrorWithPos); ok {
+					fmt.Fprintln(os.Stderr, "")
+					errPos.PrintPosError(tc.SQL, os.Stderr)
+				}
+			}
+			if tc.Err != nil && err == nil {
+				t.Errorf("Error should have been %v", tc.Err)
+			}
+			if tc.Err == nil && err != nil {
+				t.Errorf("Error should have been nil but was %v", err)
+			}
+			if tc.Ended != ended {
+				t.Errorf("End not detected")
+			}
+			if tc.Err != nil && err != nil {
+				require.Equal(t, tc.Err.Error(), err.Error(), "Unexpected error")
+			}
+			require.Equal(t, tc.Expected, p.query, "Query didn't match expectation")
+			if tc.Err != nil {
+				output.ErrorExamples = append(output.ErrorExamples, tc)
+			} else {
+				output.NoErrorExamples = append(output.NoErrorExamples, tc)
+			}
+		})
+	}
+}
+
 func BenchmarkSQLSelect(b *testing.B) {
 	sql := "SELECT a AS text FROM 'b' WHERE c = 'c' AND d = 'd'"
 	for i := 0; i < b.N; i++ {
-		q, err := Parse(sql, false)
+		q, err := Parse(sql)
 		if err != nil {
 			b.Errorf("Error should have been %v: %v", err, q)
 		}
@@ -487,7 +566,7 @@ func BenchmarkSQLSelect(b *testing.B) {
 func BenchmarkSQLInsert(b *testing.B) {
 	sql := "INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )"
 	for i := 0; i < b.N; i++ {
-		q, err := Parse(sql, false)
+		q, err := Parse(sql)
 		if err != nil {
 			b.Errorf("Error should have been %v: %v", err, q)
 		}

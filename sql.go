@@ -2,28 +2,61 @@ package sqlparser
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/msaf1980/sqlparser/query"
 )
 
+type ErrorWithPos struct {
+	msg string
+	pos int
+}
+
+func newError(pos int, msg string) *ErrorWithPos {
+	return &ErrorWithPos{
+		msg: msg,
+		pos: pos,
+	}
+}
+
+func newErrorf(pos int, format string, a ...interface{}) *ErrorWithPos {
+	return &ErrorWithPos{
+		msg: fmt.Sprintf(format, a...),
+		pos: pos,
+	}
+}
+
+func (e *ErrorWithPos) Error() string {
+	return e.msg
+}
+
+func (e *ErrorWithPos) Pos() int {
+	return e.pos
+}
+
+func (e *ErrorWithPos) PrintPosError(sql string, w io.Writer) {
+	fmt.Fprintln(w, sql)
+	fmt.Fprintln(w, strings.Repeat(" ", e.pos)+"^")
+	fmt.Println(e.msg)
+}
+
 // Parse takes a string representing a SQL query and parses it into a query.Query struct. It may fail.
-func Parse(sql string, verbose bool) (query.Query, error) {
+func Parse(sql string) (query.Query, error) {
 	sql = strings.TrimSpace(sql)
 	return (&parser{
 		sql:      sql,
 		sqlUpper: strings.ToUpper(sql),
 		step:     stepType,
-		verbose:  verbose,
 	}).parse()
 }
 
 // ParseMany takes a string slice representing many SQL queries and parses them into a query.Query struct slice.
 // It may fail. If it fails, it will stop at the first failure.
-func ParseMany(sqls []string, verbose bool) ([]query.Query, error) {
+func ParseMany(sqls []string) ([]query.Query, error) {
 	qs := []query.Query{}
 	for _, sql := range sqls {
-		q, err := Parse(sql, verbose)
+		q, err := Parse(sql)
 		if err != nil {
 			return qs, err
 		}
@@ -71,9 +104,7 @@ type parser struct {
 	sqlUpper        string
 	step            step
 	query           query.Query
-	verbose         bool
 	err             error
-	errArr          [3]string
 	nextUpdateField string
 }
 
@@ -83,7 +114,6 @@ func (p *parser) parse() (query.Query, error) {
 	if p.err == nil {
 		p.err = p.validate()
 	}
-	p.logError()
 	return q, p.err
 }
 
@@ -110,13 +140,13 @@ func (p *parser) doParse() (query.Query, error) {
 				p.query.Type = query.Delete
 				p.step = stepDeleteFromTable
 			default:
-				return p.query, fmt.Errorf("invalid query type")
+				return p.query, newError(p.i, "invalid query type")
 			}
 			p.pop()
 		case stepSelectField:
 			identifier := p.peek(false)
 			if !isIdentifierOrAsterisk(identifier) {
-				return p.query, fmt.Errorf("at SELECT: expected field to SELECT")
+				return p.query, newError(p.i, "at SELECT: expected field to SELECT")
 			}
 			p.query.Fields = append(p.query.Fields, identifier)
 			p.pop()
@@ -126,7 +156,7 @@ func (p *parser) doParse() (query.Query, error) {
 				p.pop()
 				alias := p.peek(false)
 				if !isIdentifierOrAsterisk(alias) {
-					return p.query, fmt.Errorf("at SELECT: expected alias (AS) for %s", identifier)
+					return p.query, newErrorf(p.i, "at SELECT: expected alias (AS) for %s", identifier)
 				}
 				p.query.Aliases = append(p.query.Aliases, alias)
 				p.pop()
@@ -142,21 +172,21 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepSelectComma:
 			commaRWord := p.peek(false)
 			if commaRWord != "," {
-				return p.query, fmt.Errorf("at SELECT: expected comma or FROM")
+				return p.query, newError(p.i, "at SELECT: expected comma or FROM")
 			}
 			p.pop()
 			p.step = stepSelectField
 		case stepSelectFrom:
 			fromRWord := p.peek(true)
 			if fromRWord != "FROM" {
-				return p.query, fmt.Errorf("at SELECT: expected FROM")
+				return p.query, newError(p.i, "at SELECT: expected FROM")
 			}
 			p.pop()
 			p.step = stepSelectFromTable
 		case stepSelectFromTable:
 			tableName := p.peek(false)
 			if len(tableName) == 0 {
-				return p.query, fmt.Errorf("at SELECT: expected quoted table name")
+				return p.query, newError(p.i, "at SELECT: expected quoted table name")
 			}
 			p.query.TableName = tableName
 			p.pop()
@@ -164,7 +194,7 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepInsertTable:
 			tableName := p.peek(false)
 			if len(tableName) == 0 {
-				return p.query, fmt.Errorf("at INSERT INTO: expected quoted table name")
+				return p.query, newError(p.i, "at INSERT INTO: expected quoted table name")
 			}
 			p.query.TableName = tableName
 			p.pop()
@@ -172,7 +202,7 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepDeleteFromTable:
 			tableName := p.peek(false)
 			if len(tableName) == 0 {
-				return p.query, fmt.Errorf("at DELETE FROM: expected quoted table name")
+				return p.query, newError(p.i, "at DELETE FROM: expected quoted table name")
 			}
 			p.query.TableName = tableName
 			p.pop()
@@ -180,7 +210,7 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepUpdateTable:
 			tableName := p.peek(false)
 			if len(tableName) == 0 {
-				return p.query, fmt.Errorf("at UPDATE: expected quoted table name")
+				return p.query, newError(p.i, "at UPDATE: expected quoted table name")
 			}
 			p.query.TableName = tableName
 			p.pop()
@@ -188,14 +218,14 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepUpdateSet:
 			setRWord := p.peek(true)
 			if setRWord != "SET" {
-				return p.query, fmt.Errorf("at UPDATE: expected 'SET'")
+				return p.query, newError(p.i, "at UPDATE: expected 'SET'")
 			}
 			p.pop()
 			p.step = stepUpdateField
 		case stepUpdateField:
 			identifier := p.peek(false)
 			if !isIdentifier(identifier) {
-				return p.query, fmt.Errorf("at UPDATE: expected at least one field to update")
+				return p.query, newError(p.i, "at UPDATE: expected at least one field to update")
 			}
 			p.nextUpdateField = identifier
 			p.pop()
@@ -203,14 +233,14 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepUpdateEquals:
 			equalsRWord := p.peek(false)
 			if equalsRWord != "=" {
-				return p.query, fmt.Errorf("at UPDATE: expected '='")
+				return p.query, newError(p.i, "at UPDATE: expected '='")
 			}
 			p.pop()
 			p.step = stepUpdateValue
 		case stepUpdateValue:
 			quotedValue := p.peekQuotedString(false)
 			if p.len == 0 {
-				return p.query, fmt.Errorf("at UPDATE: expected quoted value")
+				return p.query, newError(p.i, "at UPDATE: expected quoted value")
 			}
 			p.query.Updates[p.nextUpdateField] = quotedValue
 			p.nextUpdateField = ""
@@ -224,23 +254,119 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepUpdateComma:
 			commaRWord := p.peek(false)
 			if commaRWord != "," {
-				return p.query, fmt.Errorf("at UPDATE: expected ','")
+				return p.query, newError(p.i, "at UPDATE: expected ','")
 			}
 			p.pop()
 			p.step = stepUpdateField
 		case stepWhere:
 			whereRWord := p.peek(true)
 			if whereRWord != "WHERE" {
-				return p.query, fmt.Errorf("expected WHERE")
+				return p.query, newError(p.i, "expected WHERE")
 			}
 			p.pop()
 			p.step = stepWhereField
-		case stepWhereField:
+			if ended, err := p.parseWhere(); ended || err != nil {
+				return p.query, err
+			}
+		case stepInsertFieldsOpeningParens:
+			openingParens := p.peek(false)
+			if len(openingParens) != 1 || openingParens != "(" {
+				return p.query, newError(p.i, "at INSERT INTO: expected opening parens")
+			}
+			p.pop()
+			p.step = stepInsertFields
+		case stepInsertFields:
 			identifier := p.peek(false)
 			if !isIdentifier(identifier) {
-				return p.query, fmt.Errorf("at WHERE: expected field")
+				return p.query, newError(p.i, "at INSERT INTO: expected at least one field to insert")
 			}
-			p.query.Conditions = append(p.query.Conditions, query.Condition{Operand1: identifier, Operand1IsField: true})
+			p.query.Fields = append(p.query.Fields, identifier)
+			p.pop()
+			p.step = stepInsertFieldsCommaOrClosingParens
+		case stepInsertFieldsCommaOrClosingParens:
+			commaOrClosingParens := p.peek(false)
+			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
+				return p.query, newError(p.i, "at INSERT INTO: expected comma or closing parens")
+			}
+			p.pop()
+			if commaOrClosingParens == "," {
+				p.step = stepInsertFields
+				continue
+			}
+			p.step = stepInsertValuesRWord
+		case stepInsertValuesRWord:
+			valuesRWord := p.peek(true)
+			if valuesRWord != "VALUES" {
+				return p.query, newError(p.i, "at INSERT INTO: expected 'VALUES'")
+			}
+			p.pop()
+			p.step = stepInsertValuesOpeningParens
+		case stepInsertValuesOpeningParens:
+			openingParens := p.peek(false)
+			if openingParens != "(" {
+				return p.query, newError(p.i, "at INSERT INTO: expected opening parens")
+			}
+			p.query.Inserts = append(p.query.Inserts, []string{})
+			p.pop()
+			p.step = stepInsertValues
+		case stepInsertValues:
+			quotedValue := p.peekQuotedString(false)
+			if p.len == 0 {
+				return p.query, newError(p.i, "at INSERT INTO: expected quoted value")
+			}
+			p.query.Inserts[len(p.query.Inserts)-1] = append(p.query.Inserts[len(p.query.Inserts)-1], quotedValue)
+			p.pop()
+			p.step = stepInsertValuesCommaOrClosingParens
+		case stepInsertValuesCommaOrClosingParens:
+			commaOrClosingParens := p.peek(false)
+			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
+				return p.query, newError(p.i, "at INSERT INTO: expected comma or closing parens")
+			}
+			p.pop()
+			if commaOrClosingParens == "," {
+				p.step = stepInsertValues
+				continue
+			}
+			currentInsertRow := p.query.Inserts[len(p.query.Inserts)-1]
+			if len(currentInsertRow) < len(p.query.Fields) {
+				return p.query, newError(p.i, "at INSERT INTO: value count doesn't match field count")
+			}
+			p.step = stepInsertValuesCommaBeforeOpeningParens
+		case stepInsertValuesCommaBeforeOpeningParens:
+			commaRWord := p.peek(false)
+			if commaRWord != "," {
+				return p.query, newError(p.i, "at INSERT INTO: expected comma")
+			}
+			p.pop()
+			p.step = stepInsertValuesOpeningParens
+		}
+	}
+}
+
+func (p *parser) parseWhere() (bool, error) {
+	for {
+		if p.i >= len(p.sql) {
+			if len(p.query.Conditions) == 0 {
+				return true, newError(p.i, "at WHERE: empty WHERE clause")
+			}
+			// TODO detect closed
+
+			return true, nil
+		}
+		switch p.step {
+		case stepWhereField:
+			identifier := p.peek(false)
+			if len(identifier) == 0 {
+				return false, newError(p.i, "at WHERE: empty WHERE clause")
+			} else if !isIdentifier(identifier) {
+				if len(p.query.Conditions) == 0 {
+					return true, newError(p.i, "at WHERE: expected field")
+				}
+				// TODO detect closed
+
+				return true, nil
+			}
+			p.query.Conditions = append(p.query.Conditions, query.Condition{Operand1: identifier, Operand1Type: query.OpField})
 			p.pop()
 			p.step = stepWhereOperator
 		case stepWhereOperator:
@@ -260,7 +386,7 @@ func (p *parser) doParse() (query.Query, error) {
 			case "!=":
 				currentCondition.Operator = query.Ne
 			default:
-				return p.query, fmt.Errorf("at WHERE: unknown operator")
+				return false, newError(p.i, "at WHERE: unknown operator")
 			}
 			p.query.Conditions[len(p.query.Conditions)-1] = currentCondition
 			p.pop()
@@ -270,14 +396,14 @@ func (p *parser) doParse() (query.Query, error) {
 			identifier := p.peek(false)
 			if isIdentifier(identifier) {
 				currentCondition.Operand2 = identifier
-				currentCondition.Operand2IsField = true
+				currentCondition.Operand2Type = query.OpField
 			} else {
 				quotedValue := p.peekQuotedString(false)
 				if p.len == 0 {
-					return p.query, fmt.Errorf("at WHERE: expected quoted value")
+					return false, newError(p.i, "at WHERE: expected quoted value")
 				}
 				currentCondition.Operand2 = quotedValue
-				currentCondition.Operand2IsField = false
+				currentCondition.Operand2Type = query.OpQuoted
 			}
 			p.query.Conditions[len(p.query.Conditions)-1] = currentCondition
 			p.pop()
@@ -285,81 +411,14 @@ func (p *parser) doParse() (query.Query, error) {
 		case stepWhereAnd:
 			andRWord := p.peek(true)
 			if andRWord != "AND" {
-				return p.query, fmt.Errorf("expected AND")
+				return false, newError(p.i, "expected AND")
 			}
 			p.pop()
 			p.step = stepWhereField
-		case stepInsertFieldsOpeningParens:
-			openingParens := p.peek(false)
-			if len(openingParens) != 1 || openingParens != "(" {
-				return p.query, fmt.Errorf("at INSERT INTO: expected opening parens")
-			}
-			p.pop()
-			p.step = stepInsertFields
-		case stepInsertFields:
-			identifier := p.peek(false)
-			if !isIdentifier(identifier) {
-				return p.query, fmt.Errorf("at INSERT INTO: expected at least one field to insert")
-			}
-			p.query.Fields = append(p.query.Fields, identifier)
-			p.pop()
-			p.step = stepInsertFieldsCommaOrClosingParens
-		case stepInsertFieldsCommaOrClosingParens:
-			commaOrClosingParens := p.peek(false)
-			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
-				return p.query, fmt.Errorf("at INSERT INTO: expected comma or closing parens")
-			}
-			p.pop()
-			if commaOrClosingParens == "," {
-				p.step = stepInsertFields
-				continue
-			}
-			p.step = stepInsertValuesRWord
-		case stepInsertValuesRWord:
-			valuesRWord := p.peek(true)
-			if valuesRWord != "VALUES" {
-				return p.query, fmt.Errorf("at INSERT INTO: expected 'VALUES'")
-			}
-			p.pop()
-			p.step = stepInsertValuesOpeningParens
-		case stepInsertValuesOpeningParens:
-			openingParens := p.peek(false)
-			if openingParens != "(" {
-				return p.query, fmt.Errorf("at INSERT INTO: expected opening parens")
-			}
-			p.query.Inserts = append(p.query.Inserts, []string{})
-			p.pop()
-			p.step = stepInsertValues
-		case stepInsertValues:
-			quotedValue := p.peekQuotedString(false)
-			if p.len == 0 {
-				return p.query, fmt.Errorf("at INSERT INTO: expected quoted value")
-			}
-			p.query.Inserts[len(p.query.Inserts)-1] = append(p.query.Inserts[len(p.query.Inserts)-1], quotedValue)
-			p.pop()
-			p.step = stepInsertValuesCommaOrClosingParens
-		case stepInsertValuesCommaOrClosingParens:
-			commaOrClosingParens := p.peek(false)
-			if commaOrClosingParens != "," && commaOrClosingParens != ")" {
-				return p.query, fmt.Errorf("at INSERT INTO: expected comma or closing parens")
-			}
-			p.pop()
-			if commaOrClosingParens == "," {
-				p.step = stepInsertValues
-				continue
-			}
-			currentInsertRow := p.query.Inserts[len(p.query.Inserts)-1]
-			if len(currentInsertRow) < len(p.query.Fields) {
-				return p.query, fmt.Errorf("at INSERT INTO: value count doesn't match field count")
-			}
-			p.step = stepInsertValuesCommaBeforeOpeningParens
-		case stepInsertValuesCommaBeforeOpeningParens:
-			commaRWord := p.peek(false)
-			if commaRWord != "," {
-				return p.query, fmt.Errorf("at INSERT INTO: expected comma")
-			}
-			p.pop()
-			p.step = stepInsertValuesOpeningParens
+		default:
+			// TODO detect closed
+
+			return false, nil
 		}
 	}
 }
@@ -474,62 +533,42 @@ func (p *parser) peekIdentifierWithLength(upper bool) (string, int) {
 
 func (p *parser) validate() error {
 	if len(p.query.Conditions) == 0 && p.step == stepWhereField {
-		return fmt.Errorf("at WHERE: empty WHERE clause")
+		return newError(p.i, "at WHERE: empty WHERE clause")
 	}
 	if p.query.Type == query.UnknownType {
-		return fmt.Errorf("query type cannot be empty")
+		return newError(p.i, "query type cannot be empty")
 	}
 	if (p.query.Type != query.Select || len(p.query.Fields) == 0) && p.query.TableName == "" {
-		return fmt.Errorf("table name cannot be empty")
+		return newError(p.i, "table name cannot be empty")
 	}
 	if len(p.query.Conditions) == 0 && (p.query.Type == query.Update || p.query.Type == query.Delete) {
-		return fmt.Errorf("at WHERE: WHERE clause is mandatory for UPDATE & DELETE")
+		return newError(p.i, "at WHERE: WHERE clause is mandatory for UPDATE & DELETE")
 	}
 	for _, c := range p.query.Conditions {
 		if c.Operator == query.UnknownOperator {
-			return fmt.Errorf("at WHERE: condition without operator")
+			return newError(p.i, "at WHERE: condition without operator")
 		}
-		if c.Operand1 == "" && c.Operand1IsField {
-			return fmt.Errorf("at WHERE: condition with empty left side operand")
+		if c.Operand1 == "" && c.Operand1Type == query.OpField {
+			return newError(p.i, "at WHERE: condition with empty left side operand")
 		}
-		if c.Operand2 == "" && c.Operand2IsField {
-			return fmt.Errorf("at WHERE: condition with empty right side operand")
+		if c.Operand2 == "" && c.Operand2Type == query.OpField {
+			return newError(p.i, "at WHERE: condition with empty right side operand")
 		}
 	}
 	if p.query.Type == query.Insert && len(p.query.Inserts) == 0 {
-		return fmt.Errorf("at INSERT INTO: need at least one row to insert")
+		return newError(p.i, "at INSERT INTO: need at least one row to insert")
 	}
 	if p.query.Type == query.Insert {
 		for _, i := range p.query.Inserts {
 			if len(i) != len(p.query.Fields) {
-				return fmt.Errorf("at INSERT INTO: value count doesn't match field count")
+				return newError(p.i, "at INSERT INTO: value count doesn't match field count")
 			}
 		}
 	}
 	if p.query.Type == query.Select && len(p.query.Fields) != len(p.query.Aliases) {
-		return fmt.Errorf("fileds and aliases count mismatch")
+		return newError(p.i, "fileds and aliases count mismatch")
 	}
 	return nil
-}
-
-func (p *parser) logError() {
-	if p.err == nil || !p.verbose {
-		return
-	}
-	fmt.Println(p.sql)
-	fmt.Println(strings.Repeat(" ", p.i) + "^")
-	fmt.Println(p.err)
-}
-
-func (p *parser) FormatError() ([3]string, error) {
-	if p.err == nil {
-		return p.errArr, nil
-	}
-	p.errArr[0] = p.sql
-	p.errArr[1] = strings.Repeat(" ", p.i) + "^"
-	p.errArr[1] = p.err.Error()
-
-	return p.errArr, p.err
 }
 
 //var regexIdentifier = regexp.MustCompile("[a-zA-Z_][a-zA-Z_0-9]*")

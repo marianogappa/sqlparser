@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	query, err := sqlparser.Parse("SELECT a, b, c FROM 'd' WHERE e = '1' AND f > '2'", false)
+	query, err := sqlparser.Parse("SELECT a, b, c FROM 'd' WHERE e = '1' AND f > '2'")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func main() {
 ### Example: {{.Name}}
 
 ```
-query, err := sqlparser.Parse(`{{.SQL}}`, false)
+query, err := sqlparser.Parse(`{{.SQL}}`)
 
 query.Query {
 	Type: {{index $types .Expected.Type}}
@@ -38,10 +38,10 @@ query.Query {
 	Conditions: [{{range .Expected.Conditions}}
         {
             Operand1: {{.Operand1}},
-            Operand1IsField: {{.Operand1IsField}},
+            Operand1Type: {{.Operand1Type}},
             Operator: {{index $operators .Operator}},
             Operand2: {{.Operand2}},
-            Operand2IsField: {{.Operand2IsField}},
+            Operand2Type: {{.Operand2Type}},
         }{{end -}}]
 	Updates: {{.Expected.Updates}}
 	Inserts: {{.Expected.Inserts}}
@@ -54,7 +54,7 @@ query.Query {
 ### Example: {{.Name}}
 
 ```
-query, err := sqlparser.Parse(`{{.SQL}}`, false)
+query, err := sqlparser.Parse(`{{.SQL}}`)
 
 {{.Err}}
 ```
