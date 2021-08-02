@@ -53,33 +53,57 @@ func TestSQL(t *testing.T) {
 			Err:      fmt.Errorf("at SELECT: expected field to SELECT"),
 		},
 		{
+			Name:     "SELECT with incomplete alias fails",
+			SQL:      "SELECT a AS",
+			Expected: query.Query{Type: query.Select},
+			Err:      fmt.Errorf("at SELECT: expected alias (AS) for a"),
+		},
+		{
+			Name:     "SELECT version() as version",
+			SQL:      "SELECT version() as version",
+			Expected: query.Query{Type: query.Select, Fields: []string{"version()"}, Aliases: []string{"version"}},
+			Err:      nil,
+		},
+		{
 			Name:     "SELECT works",
 			SQL:      "SELECT a FROM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{""}},
+			Err:      nil,
+		},
+		{
+			Name:     "SELECT with alias works",
+			SQL:      "SELECT a AS text FROM 'b'",
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{"text"}},
+			Err:      nil,
+		},
+		{
+			Name:     "SELECT with alias works",
+			SQL:      "SELECT version(a) AS version FROM 'b'",
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"version(a)"}, Aliases: []string{"version"}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT works with lowercase",
 			SQL:      "select a fRoM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a"}, Aliases: []string{""}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT many fields works",
 			SQL:      "SELECT a, c, d FROM 'b'",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      nil,
 		},
 		{
 			Name:     "SELECT with empty WHERE fails",
 			SQL:      "SELECT a, c, d FROM 'b' WHERE",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      fmt.Errorf("at WHERE: empty WHERE clause"),
 		},
 		{
 			Name:     "SELECT with WHERE with only operand fails",
 			SQL:      "SELECT a, c, d FROM 'b' WHERE a",
-			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}},
+			Expected: query.Query{Type: query.Select, TableName: "b", Fields: []string{"a", "c", "d"}, Aliases: []string{"", "", ""}},
 			Err:      fmt.Errorf("at WHERE: condition without operator"),
 		},
 		{
@@ -88,7 +112,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Eq, Operand2: "", Operand2IsField: false},
 				},
@@ -101,7 +125,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Lt, Operand2: "1", Operand2IsField: false},
 				},
@@ -114,7 +138,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Lte, Operand2: "1", Operand2IsField: false},
 				},
@@ -127,7 +151,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Gt, Operand2: "1", Operand2IsField: false},
 				},
@@ -140,7 +164,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Gte, Operand2: "1", Operand2IsField: false},
 				},
@@ -153,7 +177,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
 				},
@@ -166,7 +190,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "b", Operand2IsField: true},
 				},
@@ -180,6 +204,7 @@ func TestSQL(t *testing.T) {
 				Type:       query.Select,
 				TableName:  "b",
 				Fields:     []string{"*"},
+				Aliases:    []string{""},
 				Conditions: nil,
 			},
 			Err: nil,
@@ -188,9 +213,9 @@ func TestSQL(t *testing.T) {
 			Name: "SELECT a, * works",
 			SQL:  "SELECT a, * FROM 'b'",
 			Expected: query.Query{
-				Type:       query.Select,
-				TableName:  "b",
-				Fields:     []string{"a", "*"},
+				Type:      query.Select,
+				TableName: "b",
+				Fields:    []string{"a", "*"}, Aliases: []string{"", ""},
 				Conditions: nil,
 			},
 			Err: nil,
@@ -201,7 +226,7 @@ func TestSQL(t *testing.T) {
 			Expected: query.Query{
 				Type:      query.Select,
 				TableName: "b",
-				Fields:    []string{"a", "c", "d"},
+				Fields:    []string{"a", "c", "d"}, Aliases: []string{"", "", ""},
 				Conditions: []query.Condition{
 					{Operand1: "a", Operand1IsField: true, Operator: query.Ne, Operand2: "1", Operand2IsField: false},
 					{Operand1: "b", Operand1IsField: true, Operator: query.Eq, Operand2: "2", Operand2IsField: false},
@@ -426,7 +451,7 @@ func TestSQL(t *testing.T) {
 	output := output{Types: query.TypeString, Operators: query.OperatorString}
 	for _, tc := range ts {
 		t.Run(tc.Name, func(t *testing.T) {
-			actual, err := ParseMany([]string{tc.SQL})
+			actual, err := ParseMany([]string{tc.SQL}, true)
 			if tc.Err != nil && err == nil {
 				t.Errorf("Error should have been %v", tc.Err)
 			}
@@ -447,6 +472,26 @@ func TestSQL(t *testing.T) {
 		})
 	}
 	createReadme(output)
+}
+
+func BenchmarkSQLSelect(b *testing.B) {
+	sql := "SELECT a AS text FROM 'b' WHERE c = 'c' AND d = 'd'"
+	for i := 0; i < b.N; i++ {
+		q, err := Parse(sql, false)
+		if err != nil {
+			b.Errorf("Error should have been %v: %v", err, q)
+		}
+	}
+}
+
+func BenchmarkSQLInsert(b *testing.B) {
+	sql := "INSERT INTO 'a' (b,c,    d) VALUES ('1','2' ,  '3' )"
+	for i := 0; i < b.N; i++ {
+		q, err := Parse(sql, false)
+		if err != nil {
+			b.Errorf("Error should have been %v: %v", err, q)
+		}
+	}
 }
 
 func createReadme(out output) {
