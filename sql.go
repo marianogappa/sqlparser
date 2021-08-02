@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/marianogappa/sqlparser/query"
+	"github.com/msaf1980/sqlparser/query"
 )
 
 // Parse takes a string representing a SQL query and parses it into a query.Query struct. It may fail.
